@@ -1,0 +1,183 @@
+---
+title: "Static choropleth map example"
+output:
+  html_document: 
+    df_print: paged
+---
+The example code below can be used to create a static choropleth map of England.
+
+Install / load packages
+```{r message=FALSE, warning=FALSE}
+if (!require("pacman")) install.packages("pacman")
+
+pacman::p_load(
+  here,
+  dplyr,
+  janitor,
+  data.table,
+  ggplot2,
+  sf,
+  scales,
+  stringr,
+  RColorBrewer,
+  knitr
+)
+```
+\
+Load in shapefiles for common areas in England:
+\
+LSOA - https://geoportal.statistics.gov.uk/datasets/lower-layer-super-output-areas-december-2011-boundaries-full-clipped-bfc-ew-v3/explore?location=52.775763%2C-2.489527%2C7.39
+\
+MSOA - https://geoportal.statistics.gov.uk/datasets/middle-layer-super-output-areas-december-2011-boundaries-full-clipped-bfc-ew-v3/explore?location=52.775763%2C-2.489527%2C7.39
+\
+LAD - https://geoportal.statistics.gov.uk/datasets/local-authority-districts-december-2021-uk-bfc
+\
+CCG - https://geoportal.statistics.gov.uk/datasets/clinical-commissioning-groups-april-2021-en-bfc/explore
+\
+NHSER - https://geoportal.statistics.gov.uk/datasets/nhs-england-regions-april-2020-boundaries-en-bfc/explore
+```{r warning=FALSE}
+shape_lsoa <- read_sf(here("1 - Data/shapefiles/LSOAs", "Lower_Layer_Super_Output_Areas__December_2011__Boundaries_Full_Clipped__BFC__EW_V3.shp")) %>% 
+  rename(area_code = LSOA11CD)
+
+shape_msoa <- read_sf(here("1 - Data/shapefiles/MSOAs", "Middle_Layer_Super_Output_Areas__December_2011__Boundaries_Full_Clipped__BFC__EW_V3.shp")) %>% 
+  rename(area_code = MSOA11CD)
+
+shape_lad <- read_sf(here("1 - Data/shapefiles/LADs", "LAD_DEC_2021_UK_BFC.shp")) %>% 
+  rename(area_code = LAD21CD)
+
+shape_ccg <- read_sf(here("1 - Data/shapefiles/CCGs", "Clinical_Commissioning_Groups_(April_2021)_EN_BFC.shp")) %>% 
+  rename(area_code = CCG21CD)
+
+shape_nhser <- read_sf(here("1 - Data/shapefiles/NHSERs", "NHS_England_Regions_(April_2020)_Boundaries_EN_BFC.shp")) %>% 
+  rename(area_code = nhser20cd)
+```
+
+\
+Read in example data. Replace with your own data with `area_code` and `measure`.
+```{r warning=FALSE}
+measure_msoa <- fread("https://api.coronavirus.data.gov.uk/v2/data?areaType=msoa&metric=cumVaccinationFirstDoseUptakeByVaccinationDatePercentage&format=csv") %>% 
+  distinct() %>% 
+  group_by(areaCode) %>% 
+  filter(date == max(date)) %>% 
+  rename(area_code = areaCode,
+         measure = cumVaccinationFirstDoseUptakeByVaccinationDatePercentage)
+```
+
+\
+Choose shapefiles and data to use, then join together. 
+`shape_one` is the area to be filled with colour, whilst `shape_two` will provide the boundary lines.
+```{r}
+df_measure <- measure_msoa
+shape_one <- shape_msoa
+shape_two <- shape_lad
+
+# join shapefile with data
+df_measure_shape <- left_join(shape_one, df_measure, by = "area_code")
+```
+
+\
+Function to automatically generate quintiles for the fill legend.
+```{r}
+scale_gen <- function(round_to = 1, small = 1, decimal_places = 0) {
+  
+  # calculate quintile cut off values, and round them to avoid interpolation 
+  # beyond lowest denomination in original data. 
+  measure_q <- quantile(df_measure_shape$measure, 
+                        c(0, 0.2, 0.4, 0.6, 0.8, 1), 
+                        na.rm = TRUE) %>% 
+    round_half_up(digits = decimal_places)
+  
+  # round middle quintiles to nearest round_to 
+  measure_q[[2]] <- round_half_up(measure_q[[2]]/round_to)*round_to
+  measure_q[[3]] <- round_half_up(measure_q[[3]]/round_to)*round_to
+  measure_q[[4]] <- round_half_up(measure_q[[4]]/round_to)*round_to
+  measure_q[[5]] <- round_half_up(measure_q[[5]]/round_to)*round_to
+  
+  df_q <- df_measure_shape %>% 
+    mutate(
+      fill_q = factor(
+        case_when(
+          measure < measure_q[[2]] ~ paste0(comma(measure_q[[1]], accuracy = round_to), " - ", comma(measure_q[[2]] - small, accuracy = round_to), sep = ""),
+          measure >= measure_q[[2]] & measure < measure_q[[3]] ~ paste0(comma(measure_q[[2]], accuracy = round_to), " - ", comma(measure_q[[3]] - small, accuracy = round_to), sep = ""),
+          measure >= measure_q[[3]] & measure < measure_q[[4]] ~ paste0(comma(measure_q[[3]], accuracy = round_to), " - ", comma(measure_q[[4]] - small, accuracy = round_to), sep = ""),
+          measure >= measure_q[[4]] & measure < measure_q[[5]] ~ paste0(comma(measure_q[[4]], accuracy = round_to), " - ", comma(measure_q[[5]] - small, accuracy = round_to), sep = ""),
+          measure >= measure_q[[5]] ~ paste0(comma(measure_q[[5]], accuracy = round_to), " - ", comma(measure_q[[6]], accuracy = round_to), sep = "")
+        ),
+        levels = c(
+          paste0(comma(measure_q[[5]], accuracy = round_to), " - ", comma(measure_q[[6]], accuracy = round_to), sep = ""),
+          paste0(comma(measure_q[[4]], accuracy = round_to), " - ", comma(measure_q[[5]] - small, accuracy = round_to), sep = ""),
+          paste0(comma(measure_q[[3]], accuracy = round_to), " - ", comma(measure_q[[4]] - small, accuracy = round_to), sep = ""),
+          paste0(comma(measure_q[[2]], accuracy = round_to), " - ", comma(measure_q[[3]] - small, accuracy = round_to), sep = ""),
+          paste0(comma(measure_q[[1]], accuracy = round_to), " - ", comma(measure_q[[2]] - small, accuracy = round_to), sep = "")
+        ),
+        ordered = TRUE,
+        exclude = NULL)
+    )
+  
+  return(df_q)
+  
+}
+```
+
+\
+Set quintile parameters:
+\
+**round_to**: set denomination to round legend values to (not including min or max).
+\
+**small**: set smallest right-most significant figure in measure (1 for count data). Used in the creation of labels to avoid overlapping quantiles.
+\
+**decimal_places**: set decimal places to round data to in next step (0 for count data).
+```{r}
+df_q <- scale_gen(round_to = 0.1, small = 0.1, decimal_places = 1)
+```
+\
+Make fill scale using the quintiles.
+```{r}
+fill_palette_q <- c(rev(brewer.pal(5, name = "Blues")), "grey80")
+names(fill_palette_q) <- c(levels(df_q$fill_q))
+fill_scale_q <- scale_fill_manual(values = fill_palette_q)
+
+df_map <- df_q %>% mutate(fill_final = fill_q)
+fill_scale_final <- fill_scale_q
+
+fill_palette_q
+```
+\
+Plot choropleth map of England.
+Change text in `labs`.
+```{r}
+p_map <- df_map %>% 
+  filter(str_detect(area_code, "^E")) %>% 
+  ggplot() + 
+  geom_sf(aes(geometry = geometry,
+              fill = fill_final),
+          colour = NA) + 
+  geom_sf(data = subset(shape_two, str_detect(area_code, "^E")),
+          aes(geometry = geometry),
+          fill = NA,
+          colour = "black",
+          size = 0.1) +
+  fill_scale_final + 
+  coord_sf(expand = FALSE, 
+           clip = "off") + 
+  labs(
+    title = "Main chart title goes here",
+    subtitle = "The subtitle could go here",
+    fill = "Legend title goes here"
+  ) + 
+  theme_void(base_size = 18, 
+             base_family = "sans") + 
+  theme(legend.position = c(0.15, 0.7),
+        plot.margin = margin(0, 10, 10, 10),
+        plot.title = element_text(face = "bold"),
+        plot.title.position = "plot")
+
+ggsave(p_map, dpi = 300, width = 10, height = 12, units = "in",
+       filename = here("3 - Outputs", "choropleth_2area.jpeg"))
+```
+
+```{r echo=FALSE} 
+include_graphics(here("3 - Outputs", "choropleth_2area.jpeg"))
+```
+
+
