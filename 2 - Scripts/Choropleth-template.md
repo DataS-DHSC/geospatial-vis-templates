@@ -1,12 +1,13 @@
----
-title: "Static choropleth map example"
-output:
-  github_document
----
-The example code below can be used to create a static choropleth map of England, with optional zoomed in areas for London, the north east and north west.
+Static choropleth map example
+================
+
+The example code below can be used to create a static choropleth map of
+England, with optional zoomed in areas for London, the north east and
+north west.
 
 Install and load packages:
-```{r message=FALSE, warning=FALSE}
+
+``` r
 if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load(
@@ -23,24 +24,30 @@ pacman::p_load(
   cowplot # draw_plot()
 )
 ```
-\
-Load in shapefiles for England. In this example we'll use Middle Layer Super Output Areas (MSOA) and Local Authority Districts (LAD).
-\
-MSOA - https://geoportal.statistics.gov.uk/datasets/middle-layer-super-output-areas-december-2011-boundaries-full-clipped-bfc-ew-v3/explore?location=52.775763%2C-2.489527%2C7.39
-\
-LAD - https://geoportal.statistics.gov.uk/datasets/local-authority-districts-december-2021-uk-bfc
-\
-`shape_one` is the area to be filled with colour, whilst `shape_two` will provide the boundary lines.
-```{r warning=FALSE}
+
+  
+Load in shapefiles for England. In this example we’ll use Middle Layer
+Super Output Areas (MSOA) and Local Authority Districts (LAD).  
+MSOA -
+<https://geoportal.statistics.gov.uk/datasets/middle-layer-super-output-areas-december-2011-boundaries-full-clipped-bfc-ew-v3/explore?location=52.775763%2C-2.489527%2C7.39>  
+LAD -
+<https://geoportal.statistics.gov.uk/datasets/local-authority-districts-december-2021-uk-bfc>  
+`shape_one` is the area to be filled with colour, whilst `shape_two`
+will provide the boundary lines.
+
+``` r
 shape_one <- read_sf(here("1 - Data/shapefiles/MSOAs", "Middle_Layer_Super_Output_Areas__December_2011__Boundaries_Full_Clipped__BFC__EW_V3.shp")) %>% 
   rename(area_code = MSOA11CD)
 
 shape_two <- read_sf(here("1 - Data/shapefiles/LADs", "LAD_DEC_2021_UK_BFC.shp")) %>% 
   rename(area_code = LAD21CD)
 ```
-\
-Read in example data. Replace with your own data using `area_code` and `measure`:
-```{r warning=FALSE}
+
+  
+Read in example data. Replace with your own data using `area_code` and
+`measure`:
+
+``` r
 df_measure <- fread("https://api.coronavirus.data.gov.uk/v2/data?areaType=msoa&metric=cumVaccinationFirstDoseUptakeByVaccinationDatePercentage&format=csv") %>% 
   distinct() %>% 
   group_by(areaCode) %>% 
@@ -48,15 +55,19 @@ df_measure <- fread("https://api.coronavirus.data.gov.uk/v2/data?areaType=msoa&m
   rename(area_code = areaCode,
          measure = cumVaccinationFirstDoseUptakeByVaccinationDatePercentage)
 ```
-\
+
+  
 Join shapefile for `shape_one` with your data:
-```{r}
+
+``` r
 # join shapefile with data
 df_measure_shape <- left_join(shape_one, df_measure, by = "area_code")
 ```
-\
+
+  
 Function to automatically generate quintiles for the fill legend:
-```{r}
+
+``` r
 scale_gen <- function(round_to = 1, small = 1, decimal_places = 0) {
   
   # calculate quintile cut off values, and round them to avoid interpolation 
@@ -98,20 +109,24 @@ scale_gen <- function(round_to = 1, small = 1, decimal_places = 0) {
   
 }
 ```
-\
-Set quintile parameters (dependant on the type of data you're using):
-\
-**round_to**: denomination to round legend values to (not including min or max).
-\
-**small**: smallest rightmost digit in measure (1 for count data). Used in the creation of labels to avoid overlapping quantiles.
-\
-**decimal_places**: decimal places to round data to in next step (0 for count data).
-```{r}
+
+  
+Set quintile parameters (dependant on the type of data you’re using):  
+**round\_to**: denomination to round legend values to (not including min
+or max).  
+**small**: smallest rightmost digit in measure (1 for count data). Used
+in the creation of labels to avoid overlapping quantiles.  
+**decimal\_places**: decimal places to round data to in next step (0 for
+count data).
+
+``` r
 df_q <- scale_gen(round_to = 0.1, small = 0.1, decimal_places = 1)
 ```
-\
+
+  
 Make fill scale using the quintiles:
-```{r}
+
+``` r
 fill_palette_q <- c(rev(brewer.pal(5, name = "Blues")), "grey80")
 names(fill_palette_q) <- c(levels(df_q$fill_q))
 fill_scale_q <- scale_fill_manual(values = fill_palette_q)
@@ -121,10 +136,14 @@ fill_scale_final <- fill_scale_q
 
 fill_palette_q
 ```
-\
-Plot choropleth map of England.
-You can change the text in `labs`.
-```{r}
+
+    ##  89.9 - 94.7  87.0 - 89.8  82.2 - 86.9  73.2 - 82.1  38.7 - 73.1 Missing data 
+    ##    "#08519C"    "#3182BD"    "#6BAED6"    "#BDD7E7"    "#EFF3FF"     "grey80"
+
+  
+Plot choropleth map of England. You can change the text in `labs`.
+
+``` r
 p_map <- df_map %>%
   filter(str_detect(area_code, "^E")) %>%
   ggplot() +
@@ -155,13 +174,12 @@ ggsave(p_map, dpi = 300, width = 12, height = 14, units = "in",
        filename = here("3 - Outputs", "choropleth_2area.jpeg"))
 ```
 
-```{r echo=FALSE} 
-include_graphics(here("3 - Outputs", "choropleth_2area.jpeg"))
-```
-\
-Include zoomed in areas for Greater London, North West England. and North East England.
-Firstly, here's a function to create a zoomed in area of the map:
-```{r}
+<img src="C:/Users/ABaker9/Department of Health and Social Care/NW025 - 2022-01 Geospatial vis templates/3 - Outputs/choropleth_2area.jpeg" width="3600" />  
+Include zoomed in areas for Greater London, North West England. and
+North East England. Firstly, here’s a function to create a zoomed in
+area of the map:
+
+``` r
 zoom_plot <- function(title_text, x1, x2, y1, y2) {
   df_map %>% 
     filter(str_detect(area_code, "^E")) %>% 
@@ -185,16 +203,20 @@ zoom_plot <- function(title_text, x1, x2, y1, y2) {
           plot.margin = margin(0, 0, 0, 0))
 }
 ```
-\
+
+  
 Now we can add in descriptions and coordinates of the areas of interest.
-```{r}
+
+``` r
 p_nee <- zoom_plot("North East England", 408000, 480000, 505000, 595000)
 p_nwe <- zoom_plot("North West England", 320000, 410000, 375000, 425000)
 p_glondon <- zoom_plot("Greater London", 500000, 565000, 155000, 201500)
 ```
-\
+
+  
 Finally, we use cowplot to plot the different areas together.
-```{r}
+
+``` r
 p_map_zoom <- ggdraw() + 
   draw_plot(p_map, 0, 0, 1, 1) + 
   draw_plot(p_nee, 0.025, 0.608, 0.25, 0.4) + 
@@ -205,6 +227,4 @@ ggsave(p_map_zoom, dpi = 300, width = 12, height = 14, units = "in",
        filename = here("3 - Outputs", "choropleth_2area_zoom.jpeg"))
 ```
 
-```{r echo=FALSE} 
-include_graphics(here("3 - Outputs", "choropleth_2area_zoom.jpeg"))
-```
+<img src="C:/Users/ABaker9/Department of Health and Social Care/NW025 - 2022-01 Geospatial vis templates/3 - Outputs/choropleth_2area_zoom.jpeg" width="3600" />
