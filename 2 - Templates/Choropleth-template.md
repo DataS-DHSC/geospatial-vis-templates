@@ -3,49 +3,41 @@ Static choropleth map example
 
 The example code below can be used to create a static choropleth map of
 England, with optional zoomed in areas for London, the north east and
-north west.
-
-Install and load packages:
+north west.  
+  
+The **\[User\]** flag is used where you may need to edit code, download
+something, or make a choice before running the next code chunk.  
+  
+Firstly, install and the following packages
 
 ``` r
-if (!require("pacman")) install.packages("pacman")
+# install.packages("here", type = "binary")
+# install.packages("data.table", type = "binary")
+# install.packages("janitor", type = "binary")
+# install.packages("dplyr", type = "binary")
+# install.packages("ggplot2", type = "binary")
+# install.packages("sf", type = "binary")
+# install.packages("scales", type = "binary")
+# install.packages("stringr", type = "binary")
+# install.packages("knitr", type = "binary")
+# install.packages("cowplot", type = "binary")
 
-pacman::p_load(
-  here, # File path referencing
-  data.table, # Fast reading/writing
-  janitor, # Rounding
-  dplyr, # general data manipulation
-  ggplot2, # General plotting
-  sf, # Geospatial mapping
-  scales, # Commas for legend
-  stringr, # str_detect()
-  RColorBrewer, # colour palettes
-  knitr, # include_graphics()
-  cowplot # draw_plot()
-)
+library(here) # File path referencing
+library(data.table) # Fast reading/writing
+library(janitor) # Rounding
+library(dplyr) # General data manipulation
+library(ggplot2) # General plotting
+library(sf) # Geospatial mapping
+library(scales) # Commas for legend
+library(stringr) # str_detect()
+library(knitr) # include_graphics()
+library(cowplot) # extra plotting functions
 ```
 
   
-Load in shapefiles for England. In this example we’ll use Middle Layer
-Super Output Areas (MSOA) and Local Authority Districts (LAD).  
-MSOA -
-<https://geoportal.statistics.gov.uk/datasets/middle-layer-super-output-areas-december-2011-boundaries-full-clipped-bfc-ew-v3/explore?location=52.775763%2C-2.489527%2C7.39>  
-LAD -
-<https://geoportal.statistics.gov.uk/datasets/local-authority-districts-december-2021-uk-bfc>  
-`shape_one` is the area to be filled with colour, whilst `shape_two`
-will provide the boundary lines.
-
-``` r
-shape_one <- read_sf(here("1 - Data/shapefiles/MSOAs", "Middle_Layer_Super_Output_Areas__December_2011__Boundaries_Full_Clipped__BFC__EW_V3.shp")) %>% 
-  rename(area_code = MSOA11CD)
-
-shape_two <- read_sf(here("1 - Data/shapefiles/LADs", "LAD_DEC_2021_UK_BFC.shp")) %>% 
-  rename(area_code = LAD21CD)
-```
-
-  
-Read in example data. Replace with your own data using `area_code` and
-`measure`:
+**\[User\]** Read in your data to make a tibble called `df_measure` that
+includes the two columns `area_code` and `measure`. In this example I
+take data from an api for coronavirus data.
 
 ``` r
 df_measure <- fread("https://api.coronavirus.data.gov.uk/v2/data?areaType=msoa&metric=cumVaccinationFirstDoseUptakeByVaccinationDatePercentage&format=csv") %>% 
@@ -57,91 +49,95 @@ df_measure <- fread("https://api.coronavirus.data.gov.uk/v2/data?areaType=msoa&m
 ```
 
   
-Join shapefile for `shape_one` with your data:
+**\[User\]** Download your own shapefiles from the
+[geoportal](https://geoportal.statistics.gov.uk/) and put them into the
+“1 - Data/shapefiles/” folder.  
+  
+In this example we’ll load in Middle Layer Super Output Areas (MSOA) and
+Local Authority Districts (LAD).  
+`shape_one` is the area to be filled with colour, whilst `shape_two`
+will provide the boundary lines. These can be the same.
 
 ``` r
-# join shapefile with data
+shape_one <- read_sf(here("1 - Data/shapefiles/MSOAs", "Middle_Layer_Super_Output_Areas__December_2011__Boundaries_Full_Clipped__BFC__EW_V3.shp")) %>% 
+  rename(area_code = MSOA11CD)
+
+shape_two <- read_sf(here("1 - Data/shapefiles/LADs", "LAD_DEC_2021_UK_BFC.shp")) %>% 
+  rename(area_code = LAD21CD)
+```
+
+  
+Join the shapefile for `shape_one` with your data:
+
+``` r
 df_measure_shape <- left_join(shape_one, df_measure, by = "area_code")
 ```
 
   
-Function to automatically generate quintiles for the fill legend:
+Now we need to make the `fill_grouped` column to split the measure into
+groups for the fill legend…  
+  
+**\[User\]** If your measure is continuous or count data, you can use
+the [scale\_gen
+function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/scale_gen.R)
+which automatically generate quintiles for the fill legend. Choose the
+`round_to` and `decimal_places` values depending on the type of data
+you’re using.
 
 ``` r
-scale_gen <- function(round_to = 1, small = 1, decimal_places = 0) {
-  
-  # calculate quintile cut off values, and round them to avoid interpolation 
-  # beyond lowest denomination in original data. 
-  measure_q <- quantile(df_measure_shape$measure, 
-                        c(0, 0.2, 0.4, 0.6, 0.8, 1), 
-                        na.rm = TRUE) %>% 
-    round_half_up(digits = decimal_places)
-  
-  # round middle quintiles to nearest round_to 
-  measure_q[[2]] <- round_half_up(measure_q[[2]]/round_to)*round_to
-  measure_q[[3]] <- round_half_up(measure_q[[3]]/round_to)*round_to
-  measure_q[[4]] <- round_half_up(measure_q[[4]]/round_to)*round_to
-  measure_q[[5]] <- round_half_up(measure_q[[5]]/round_to)*round_to
-  
-  df_q <- df_measure_shape %>% 
-    mutate(
-      fill_q = factor(
-        case_when(
-          measure < measure_q[[2]] ~ paste0(comma(measure_q[[1]], accuracy = round_to), " - ", comma(measure_q[[2]] - small, accuracy = round_to), sep = ""),
-          measure >= measure_q[[2]] & measure < measure_q[[3]] ~ paste0(comma(measure_q[[2]], accuracy = round_to), " - ", comma(measure_q[[3]] - small, accuracy = round_to), sep = ""),
-          measure >= measure_q[[3]] & measure < measure_q[[4]] ~ paste0(comma(measure_q[[3]], accuracy = round_to), " - ", comma(measure_q[[4]] - small, accuracy = round_to), sep = ""),
-          measure >= measure_q[[4]] & measure < measure_q[[5]] ~ paste0(comma(measure_q[[4]], accuracy = round_to), " - ", comma(measure_q[[5]] - small, accuracy = round_to), sep = ""),
-          measure >= measure_q[[5]] ~ paste0(comma(measure_q[[5]], accuracy = round_to), " - ", comma(measure_q[[6]], accuracy = round_to), sep = ""),
-          is.na(measure) ~ "Missing data"
-        ),
-        levels = c(
-          paste0(comma(measure_q[[5]], accuracy = round_to), " - ", comma(measure_q[[6]], accuracy = round_to), sep = ""),
-          paste0(comma(measure_q[[4]], accuracy = round_to), " - ", comma(measure_q[[5]] - small, accuracy = round_to), sep = ""),
-          paste0(comma(measure_q[[3]], accuracy = round_to), " - ", comma(measure_q[[4]] - small, accuracy = round_to), sep = ""),
-          paste0(comma(measure_q[[2]], accuracy = round_to), " - ", comma(measure_q[[3]] - small, accuracy = round_to), sep = ""),
-          paste0(comma(measure_q[[1]], accuracy = round_to), " - ", comma(measure_q[[2]] - small, accuracy = round_to), sep = ""),
-          "Missing data"
-        ),
-        ordered = TRUE)
-    )
-  
-  return(df_q)
-  
-}
+source(here("2 - Templates", "extra_scripts", "scale_gen.R"))
+
+df_grouped <- scale_gen(
+  round_to = 0.1, # Denomination to round to (min/max left unrounded)
+  decimal_places = 1 # Decimal places to round to (0 for count data)
+)
+
+levels(df_grouped$fill_grouped)
 ```
 
+    ## [1] "89.7 - 94.5"  "86.7 - 89.6"  "81.9 - 86.6"  "72.8 - 81.8"  "38.1 - 72.7" 
+    ## [6] "Missing data"
+
   
-Set quintile parameters (dependant on the type of data you’re using):  
-**round\_to**: denomination to round legend values to (not including min
-or max).  
-**small**: smallest rightmost digit in measure (1 for count data). Used
-in the creation of labels to avoid overlapping quantiles.  
-**decimal\_places**: decimal places to round data to in next step (0 for
-count data).
+**\[User\]** If your measure is already grouped into categories, name
+the column `fill_grouped`, make sure to fill any NAs in with the text
+“Missing data”, then edit the colours in `fill_palette` below to suit.
+The number of colours must match the number of categories in
+`fill_grouped`, including missing data.  
+  
+If you used `scale_gen()`, just run the follow code chunk without
+changing anything.
 
 ``` r
-df_q <- scale_gen(round_to = 0.1, small = 0.1, decimal_places = 1)
+fill_palette <- c(
+  "#294011", # Q5 (Highest values)
+  "#4C721D", # Q4
+  "#589325", # Q3
+  "#88D147", # Q2
+  "#D7EFC3", # Q1 (Lowest values)
+  "grey80" # For missing data
+  )
+
+names(fill_palette) <- levels(df_grouped$fill_grouped)
+fill_scale_final <- scale_fill_manual(values = fill_palette)
+
+df_map <- df_grouped %>% mutate(fill_final = fill_grouped)
+
+df_grouped %>% 
+  ggplot(aes(measure, fill = fill_grouped)) + 
+  geom_histogram() + 
+  theme_minimal() + 
+  fill_scale_final
 ```
 
-  
-Make fill scale using the quintiles:
+    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-``` r
-fill_palette_q <- c(rev(brewer.pal(5, name = "Blues")), "grey80")
-names(fill_palette_q) <- c(levels(df_q$fill_q))
-fill_scale_q <- scale_fill_manual(values = fill_palette_q)
-
-df_map <- df_q %>% mutate(fill_final = fill_q)
-fill_scale_final <- fill_scale_q
-
-fill_palette_q
-```
-
-    ##  89.9 - 94.7  86.9 - 89.8  82.2 - 86.8  73.2 - 82.1  38.6 - 73.1 Missing data 
-    ##    "#08519C"    "#3182BD"    "#6BAED6"    "#BDD7E7"    "#EFF3FF"     "grey80"
+![](Choropleth-template_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
 
   
-Plot choropleth map of England. You can change the text in `labs`.
+Now it’s time to plot a choropleth map of England.  
+**\[User\]** You can change the text in `labs()`, and the file name in
+`ggsave()`.
 
 ``` r
 p_map <- df_map %>%
@@ -174,7 +170,7 @@ ggsave(p_map, dpi = 300, width = 12, height = 14, units = "in",
        filename = here("2 - Templates", "output_vis", "choropleth_2area.jpeg"))
 ```
 
-![](output_vis/choropleth_2area.jpeg) 
+<img src="C:/Users/ABaker9/OneDrive - Department of Health and Social Care/geospatial-vis-templates/2 - Templates/output_vis/choropleth_2area.jpeg" width="3600" />  
 Include zoomed in areas for Greater London, North West England. and
 North East England. Firstly, here’s a function to create a zoomed in
 area of the map:
@@ -227,4 +223,4 @@ ggsave(p_map_zoom, dpi = 300, width = 12, height = 14, units = "in",
        filename = here("2 - Templates", "output_vis", "choropleth_2area_zoom.jpeg"))
 ```
 
-![](output_vis/choropleth_2area_zoom.jpeg)
+<img src="C:/Users/ABaker9/OneDrive - Department of Health and Social Care/geospatial-vis-templates/2 - Templates/output_vis/choropleth_2area_zoom.jpeg" width="3600" />
