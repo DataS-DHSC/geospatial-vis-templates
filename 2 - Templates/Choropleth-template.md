@@ -170,7 +170,7 @@ ggsave(p_map, dpi = 300, width = 12, height = 14, units = "in",
        filename = here("2 - Templates", "output_vis", "choropleth_2area.jpeg"))
 ```
 
-<img src="C:/Users/ABaker9/OneDrive - Department of Health and Social Care/geospatial-vis-templates/2 - Templates/output_vis/choropleth_2area.jpeg" width="3600" />  
+![](output_vis/choropleth_2area.jpeg)
 Include zoomed in areas for Greater London, North West England. and
 North East England. Firstly, here’s a function to create a zoomed in
 area of the map:
@@ -223,4 +223,4 @@ ggsave(p_map_zoom, dpi = 300, width = 12, height = 14, units = "in",
        filename = here("2 - Templates", "output_vis", "choropleth_2area_zoom.jpeg"))
 ```
 
-<img src="C:/Users/ABaker9/OneDrive - Department of Health and Social Care/geospatial-vis-templates/2 - Templates/output_vis/choropleth_2area_zoom.jpeg" width="3600" />
+![](output_vis/choropleth_2area_zoom.jpeg)
