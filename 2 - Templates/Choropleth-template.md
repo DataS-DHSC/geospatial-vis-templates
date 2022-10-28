@@ -5,8 +5,9 @@ The example code below can be used to create a static choropleth map of
 England, with optional zoomed in areas for London, the north east and
 north west.  
   
-The **\[User\]** flag is used where you may need to edit code, download
-something, or make a choice before running the next code chunk.  
+The :red\_circle: symbol is used where you may need to edit code,
+download something, or make a choice before running the next code
+chunk.  
   
 Firstly, install and the following packages
 
@@ -26,6 +27,7 @@ library(here) # File path referencing
 library(data.table) # Fast reading/writing
 library(janitor) # Rounding
 library(dplyr) # General data manipulation
+library(tidyr) # More general data manipulation
 library(ggplot2) # General plotting
 library(sf) # Geospatial mapping
 library(scales) # Commas for legend
@@ -35,9 +37,9 @@ library(cowplot) # extra plotting functions
 ```
 
   
-**\[User\]** Read in your data to make a tibble called `df_measure` that
-includes the two columns `area_code` and `measure`. In this example I
-take data from an api for coronavirus data.
+:red\_circle: Read in your data to make a tibble called `df_measure`
+that includes the two columns `area_code` and `measure`. In this example
+I take data from an api for coronavirus data.
 
 ``` r
 df_measure <- fread("https://api.coronavirus.data.gov.uk/v2/data?areaType=msoa&metric=cumVaccinationFirstDoseUptakeByVaccinationDatePercentage&format=csv") %>% 
@@ -49,7 +51,7 @@ df_measure <- fread("https://api.coronavirus.data.gov.uk/v2/data?areaType=msoa&m
 ```
 
   
-**\[User\]** Download your own shapefiles from the
+:red\_circle: Download your own shapefiles from the
 [geoportal](https://geoportal.statistics.gov.uk/) and put them into the
 “1 - Data/shapefiles/” folder.  
   
@@ -77,7 +79,7 @@ df_measure_shape <- left_join(shape_one, df_measure, by = "area_code")
 Now we need to make the `fill_grouped` column to split the measure into
 groups for the fill legend…  
   
-**\[User\]** If your measure is continuous or count data, you can use
+:red\_circle: If your measure is continuous or count data, you can use
 the [scale\_gen
 function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/scale_gen.R)
 which automatically generate quintiles for the fill legend. Choose the
@@ -99,7 +101,7 @@ levels(df_grouped$fill_grouped)
     ## [6] "Missing data"
 
   
-**\[User\]** If your measure is already grouped into categories, name
+:red\_circle: If your measure is already grouped into categories, name
 the column `fill_grouped`, make sure to fill any NAs in with the text
 “Missing data”, then edit the colours in `fill_palette` below to suit.
 The number of colours must match the number of categories in
@@ -132,11 +134,9 @@ df_grouped %>%
 
     ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
 
-![](Choropleth-template_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->
-
-  
+![](Choropleth-template_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->  
 Now it’s time to plot a choropleth map of England.  
-**\[User\]** You can change the text in `labs()`, and the file name in
+:red\_circle: You can change the text in `labs()`, and the file name in
 `ggsave()`.
 
 ``` r
@@ -170,54 +170,44 @@ ggsave(p_map, dpi = 300, width = 12, height = 14, units = "in",
        filename = here("2 - Templates", "output_vis", "choropleth_2area.jpeg"))
 ```
 
-![](output_vis/choropleth_2area.jpeg)
-Include zoomed in areas for Greater London, North West England. and
-North East England. Firstly, here’s a function to create a zoomed in
-area of the map:
+![](output_vis/choropleth_2area.jpeg)  
+We can also include zoomed in areas for locations of interest by using
+the [zoom\_plot
+function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/scale_gen.R).
 
 ``` r
-zoom_plot <- function(title_text, x1, x2, y1, y2) {
-  df_map %>% 
-    filter(str_detect(area_code, "^E")) %>% 
-    ggplot() + 
-    geom_sf(aes(geometry = geometry,
-                fill = fill_final),
-            colour = NA) + 
-    geom_sf(data = subset(shape_two, str_detect(area_code, "^E")),
-            aes(geometry = geometry),
-            fill = NA,
-            colour = "black",
-            size = 0.1) +
-    labs(title = title_text) + 
-    fill_scale_final + 
-    xlim(x1, x2) +
-    ylim(y1, y2) +
-    coord_sf(expand = FALSE, 
-             clip = "on") + 
-    theme_void() + 
-    theme(legend.position = "none",
-          plot.margin = margin(0, 0, 0, 0))
-}
+source(here("2 - Templates", "extra_scripts", "zoom_plot.R"))
 ```
 
   
-Now we can add in descriptions and coordinates of the areas of interest.
+Now we can add in locations with coordinates of the areas of interest.
 
 ``` r
-p_nee <- zoom_plot("North East England", 408000, 480000, 505000, 595000)
-p_nwe <- zoom_plot("North West England", 320000, 410000, 375000, 425000)
-p_glondon <- zoom_plot("Greater London", 500000, 565000, 155000, 201500)
+locations <- tibble(
+  `London` =  c(505000, 555000, 155000, 205000),
+  `Liverpool & Manchester` = c(320000, 410000, 375000, 425000),
+  `Leeds & Sheffield` = c(400000, 470000, 370000, 440000),
+  `Coventry & Birmingham` = c(380000, 450000, 250000, 320000),
+  `Cambridge` = c(500000, 570000, 220000, 290000),
+  `Oxford` = c(420000, 490000, 170000, 240000),
+  `Bristol` = c(310000, 380000, 140000, 210000)
+  )
+
+p_top <- zoom_plot("Leeds & Sheffield", locations$`Leeds & Sheffield`)
+p_middle <- zoom_plot("Coventry & Birmingham", locations$`Coventry & Birmingham`)
+p_bottom <- zoom_plot("London", locations$`London`)
 ```
 
   
-Finally, we use cowplot to plot the different areas together.
+Finally, we can plot the different areas together.  
+:red\_circle: Again, you can change the file name in `ggsave()`.
 
 ``` r
 p_map_zoom <- ggdraw() + 
   draw_plot(p_map, 0, 0, 1, 1) + 
-  draw_plot(p_nee, 0.025, 0.608, 0.25, 0.4) + 
-  draw_plot(p_nwe, 0.025, 0.466, 0.35, 0.18) + 
-  draw_plot(p_glondon, 0.025, 0.248, 0.30, 0.20)
+  draw_plot(p_top, 0.03, 0.331, 0.25) + 
+  draw_plot(p_middle, 0.03, 0.097, 0.25) + 
+  draw_plot(p_bottom, 0.03, -0.137, 0.25)
 
 ggsave(p_map_zoom, dpi = 300, width = 12, height = 14, units = "in",
        filename = here("2 - Templates", "output_vis", "choropleth_2area_zoom.jpeg"))
