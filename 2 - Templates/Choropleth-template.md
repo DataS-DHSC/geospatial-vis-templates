@@ -1,15 +1,14 @@
-Static choropleth map example
+Static choropleth map of England
 ================
 
-The example code below can be used to create a static choropleth map of
-England, with optional zoomed in areas for London, the north east and
-north west.  
+The code below can be used to create a static choropleth map of England,
+with optional zoomed in areas of interest.  
   
 The :red\_circle: symbol is used where you may need to edit code,
 download something, or make a choice before running the next code
 chunk.  
   
-Firstly, install and the following packages
+Firstly, install and load the following packages.
 
 ``` r
 # install.packages("here", type = "binary")
@@ -51,9 +50,8 @@ df_measure <- fread("https://api.coronavirus.data.gov.uk/v2/data?areaType=msoa&m
 ```
 
   
-:red\_circle: Download your own shapefiles from the
-[geoportal](https://geoportal.statistics.gov.uk/) and put them into the
-“1 - Data/shapefiles/” folder.  
+:red\_circle: Download your own shapefiles from the [ONS Open Geography
+Portal](https://geoportal.statistics.gov.uk/) and read them in below.  
   
 In this example we’ll load in Middle Layer Super Output Areas (MSOA) and
 Local Authority Districts (LAD).  
@@ -76,6 +74,19 @@ df_measure_shape <- left_join(shape_one, df_measure, by = "area_code")
 ```
 
   
+To set up the England-only filter for the `shape_one` and `shape_two`
+areas, we can filter to keep codes that start with “E”. This works for
+most things including LSOA, MSOA, LAD, CCG, ICB, Sub-ICB, NHS region,
+STP, Cancer Alliance, and Strategic Clinical Network.  
+:red\_circle: If your `area_code`s for England do not start with “E”,
+you will need to alter the code below before running.
+
+``` r
+shape_one_england <- function(df) {df %>% filter(str_detect(area_code, "^E"))} # Starts with "E"
+shape_two_england <- function(df) {df %>% filter(str_detect(area_code, "^E"))} # Starts with "E"
+```
+
+  
 Now we need to make the `fill_grouped` column to split the measure into
 groups for the fill legend…  
   
@@ -90,7 +101,7 @@ you’re using.
 source(here("2 - Templates", "extra_scripts", "scale_gen.R"))
 
 df_grouped <- scale_gen(
-  round_to = 0.1, # Denomination to round to (min/max left unrounded)
+  round_to = 0.1, # Denomination to round to (min/max not rounded)
   decimal_places = 1 # Decimal places to round to (0 for count data)
 )
 
@@ -103,9 +114,9 @@ levels(df_grouped$fill_grouped)
   
 :red\_circle: If your measure is already grouped into categories, name
 the column `fill_grouped`, make sure to fill any NAs in with the text
-“Missing data”, then edit the colours in `fill_palette` below to suit.
-The number of colours must match the number of categories in
-`fill_grouped`, including missing data.  
+“Missing data”, call the tibble `df_grouped`, then edit the hex colour
+codes in `fill_palette` below to suit. The number of colours must match
+the number of categories in `fill_grouped`, including missing data.  
   
 If you used `scale_gen()`, just run the follow code chunk without
 changing anything.
@@ -125,28 +136,41 @@ fill_scale_final <- scale_fill_manual(values = fill_palette)
 
 df_map <- df_grouped %>% mutate(fill_final = fill_grouped)
 
+# Test legend colours are correct, along with general distribution of the measure
 df_grouped %>% 
-  ggplot(aes(measure, fill = fill_grouped)) + 
-  geom_histogram() + 
+  ggplot(aes(1, measure, fill = fill_grouped)) + 
+  geom_jitter(
+    height = 0,
+    shape = 21, 
+    size = 1.5,
+    stroke = 0,
+    colour = "transparent"
+  ) + 
   theme_minimal() + 
+  theme(
+    axis.title.x = element_blank(),
+    axis.text.x = element_blank(),
+    axis.ticks.x = element_blank(),
+    panel.grid.major.x = element_blank(),
+    panel.grid.minor.x = element_blank()
+  ) + 
+  guides(fill = guide_legend(override.aes = list(size = 10, shape = 22))) + 
   fill_scale_final
 ```
 
-    ## `stat_bin()` using `bins = 30`. Pick better value with `binwidth`.
-
-![](Choropleth-template_files/figure-gfm/unnamed-chunk-6-1.png)<!-- -->  
+![](Choropleth-template_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->  
 Now it’s time to plot a choropleth map of England.  
 :red\_circle: You can change the text in `labs()`, and the file name in
 `ggsave()`.
 
 ``` r
 p_map <- df_map %>%
-  filter(str_detect(area_code, "^E")) %>%
+  shape_one_england() %>%
   ggplot() +
   geom_sf(aes(geometry = geometry,
               fill = fill_final),
           colour = NA) +
-  geom_sf(data = subset(shape_two, str_detect(area_code, "^E")),
+  geom_sf(data = shape_two %>% shape_two_england,
           aes(geometry = geometry),
           fill = NA,
           colour = "black",
@@ -173,14 +197,16 @@ ggsave(p_map, dpi = 300, width = 12, height = 14, units = "in",
 ![](output_vis/choropleth_2area.jpeg)  
 We can also include zoomed in areas for locations of interest by using
 the [zoom\_plot
-function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/scale_gen.R).
+function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/zoom_plot.R).
 
 ``` r
 source(here("2 - Templates", "extra_scripts", "zoom_plot.R"))
 ```
 
   
-Now we can add in locations with coordinates of the areas of interest.
+Now we can add in locations with coordinates of the areas of interest.  
+:red\_circle: Change the zoomed locations for the top, middle and bottom
+windows in `p_top`, `p_middle`, and `p_bottom`, respectively.
 
 ``` r
 locations <- tibble(

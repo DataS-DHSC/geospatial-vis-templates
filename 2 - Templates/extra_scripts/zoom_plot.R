@@ -2,12 +2,12 @@
 
 zoom_plot <- function(title_text, coords) {
   df_map %>% 
-    filter(str_detect(area_code, "^E")) %>% 
+    shape_one_england() %>% 
     ggplot() + 
     geom_sf(aes(geometry = geometry,
                 fill = fill_final),
             colour = NA) + 
-    geom_sf(data = subset(shape_two, str_detect(area_code, "^E")),
+    geom_sf(data = shape_two %>% shape_two_england(),
             aes(geometry = geometry),
             fill = NA,
             colour = "black",
