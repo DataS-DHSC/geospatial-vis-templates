@@ -1,16 +1,16 @@
 # Create zoomed version of a map
 
 zoom_plot <- function(title_text, coords) {
-  df_map %>% 
+  df_grouped %>% 
     shape_one_england() %>% 
     ggplot() + 
     geom_sf(aes(geometry = geometry,
-                fill = fill_final),
+                fill = fill_grouped),
             colour = NA) + 
     geom_sf(data = shape_two %>% shape_two_england(),
             aes(geometry = geometry),
             fill = NA,
-            colour = "black",
+            colour = boundary_colour,
             size = 0.1) +
     labs(title = title_text) + 
     fill_scale_final + 

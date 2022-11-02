@@ -2,7 +2,6 @@
 .Rhistory
 .RData
 .Ruserdata
-*.csv
 *.cpg
 *.dbf
 *.prj
