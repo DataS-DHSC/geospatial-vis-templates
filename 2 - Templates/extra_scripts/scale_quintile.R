@@ -1,6 +1,6 @@
 # Automatically generate quintiles for a fill legend
 
-scale_gen <- function(round_to = 1, decimal_places = 0) {
+scale_quintile <- function(round_to = 1, decimal_places = 0) {
   
   # calculate quintile cut off values, and round them to avoid interpolation 
   # beyond lowest denomination in original data. 

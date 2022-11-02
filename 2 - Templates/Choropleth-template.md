@@ -1,4 +1,4 @@
-Static choropleth map of England
+Choropleth map of England
 ================
 
 The code below can be used to create a static choropleth map of England,
@@ -36,17 +36,15 @@ library(cowplot) # extra plotting functions
 ```
 
   
-:red\_circle: Read in your data to make a tibble called `df_measure`
-that includes the two columns `area_code` and `measure`. In this example
-I take data from an api for coronavirus data.
+:red\_circle: Write your own code to read in your data into a tibble
+called `df_measure` that includes the two columns `area_code` and
+`measure`.  
+In this example, I read coronavirus vaccination data from a csv. You may
+read your data in from an excel file, api, or something else.
 
 ``` r
-df_measure <- fread("https://api.coronavirus.data.gov.uk/v2/data?areaType=msoa&metric=cumVaccinationFirstDoseUptakeByVaccinationDatePercentage&format=csv") %>% 
-  distinct() %>% 
-  group_by(areaCode) %>% 
-  filter(date == max(date)) %>% 
-  rename(area_code = areaCode,
-         measure = cumVaccinationFirstDoseUptakeByVaccinationDatePercentage)
+df_measure <- fread(here("1 - Data/example_data", "example_data_msoa.csv")) %>% 
+  tibble()
 ```
 
   
@@ -87,24 +85,42 @@ shape_two_england <- function(df) {df %>% filter(str_detect(area_code, "^E"))} #
 ```
 
   
+Check to see which, if any, areas have missing data.  
+More missing than expected? You may have chosen the wrong shapefile.
+
+``` r
+df_measure_shape %>% 
+  tibble() %>% 
+  shape_one_england %>% 
+  filter(is.na(measure)) %>% 
+  select(area_code, measure)
+```
+
+    ## # A tibble: 1 x 2
+    ##   area_code measure
+    ##   <chr>       <dbl>
+    ## 1 E02006781      NA
+
+  
 Now we need to make the `fill_grouped` column to split the measure into
 groups for the fill legend…  
   
 :red\_circle: If your measure is continuous or count data, you can use
-the [scale\_gen
-function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/scale_gen.R)
+the [scale\_quintile
+function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/scale_quintile.R)
 which automatically generate quintiles for the fill legend. Choose the
 `round_to` and `decimal_places` values depending on the type of data
 you’re using.
 
 ``` r
-source(here("2 - Templates", "extra_scripts", "scale_gen.R"))
+source(here("2 - Templates", "extra_scripts", "scale_quintile.R"))
 
-df_grouped <- scale_gen(
+df_grouped <- scale_quintile(
   round_to = 0.1, # Denomination to round to (min/max not rounded)
   decimal_places = 1 # Decimal places to round to (0 for count data)
 )
 
+# Check legend labels look correct
 levels(df_grouped$fill_grouped)
 ```
 
@@ -118,7 +134,7 @@ the column `fill_grouped`, make sure to fill any NAs in with the text
 codes in `fill_palette` below to suit. The number of colours must match
 the number of categories in `fill_grouped`, including missing data.  
   
-If you used `scale_gen()`, just run the follow code chunk without
+If you used `scale_quintile()`, just run the follow code chunk without
 changing anything.
 
 ``` r
@@ -133,8 +149,6 @@ fill_palette <- c(
 
 names(fill_palette) <- levels(df_grouped$fill_grouped)
 fill_scale_final <- scale_fill_manual(values = fill_palette)
-
-df_map <- df_grouped %>% mutate(fill_final = fill_grouped)
 
 # Test legend colours are correct, along with general distribution of the measure
 df_grouped %>% 
@@ -158,33 +172,38 @@ df_grouped %>%
   fill_scale_final
 ```
 
-![](Choropleth-template_files/figure-gfm/unnamed-chunk-7-1.png)<!-- -->  
+![](Choropleth-template_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->  
 Now it’s time to plot a choropleth map of England.  
-:red\_circle: You can change the text in `labs()`, and the file name in
+:red\_circle: You can change the text in `labs()`, change or remove the
+boundary line colour with `boundary_line`, and change the file name in
 `ggsave()`.
 
 ``` r
-p_map <- df_map %>%
+# Choose between "black" or "white" or use NA (without quotes) to remove entirely.
+boundary_colour <- "black"
+
+p_map <- df_grouped %>%
   shape_one_england() %>%
   ggplot() +
-  geom_sf(aes(geometry = geometry,
-              fill = fill_final),
-          colour = NA) +
-  geom_sf(data = shape_two %>% shape_two_england,
-          aes(geometry = geometry),
-          fill = NA,
-          colour = "black",
-          size = 0.1) +
+  geom_sf(
+    aes(geometry = geometry, fill = fill_grouped), 
+    colour = NA
+  ) +
+  geom_sf(
+    data = shape_two %>% shape_two_england,
+    aes(geometry = geometry),
+    fill = NA,
+    size = 0.1,
+    colour = boundary_colour
+  ) +
   fill_scale_final +
-  coord_sf(expand = FALSE,
-           clip = "off") +
+  coord_sf(expand = FALSE, clip = "off") +
   labs(
     title = "Chart title goes here",
     fill = "Legend title goes here",
     caption = "Caption / data source details can go down here."
   ) +
-  theme_void(base_size = 18,
-             base_family = "sans") +
+  theme_void(base_size = 18, base_family = "sans") +
   theme(legend.position = c(0.84, 0.93),
         plot.margin = margin(0, 10, 10, 10),
         plot.title = element_text(face = "bold"),
