@@ -11,28 +11,22 @@ chunk.
 Firstly, install and load the following packages.
 
 ``` r
-# install.packages("here", type = "binary")
-# install.packages("data.table", type = "binary")
-# install.packages("janitor", type = "binary")
-# install.packages("dplyr", type = "binary")
-# install.packages("ggplot2", type = "binary")
-# install.packages("sf", type = "binary")
-# install.packages("scales", type = "binary")
-# install.packages("stringr", type = "binary")
-# install.packages("knitr", type = "binary")
-# install.packages("cowplot", type = "binary")
+options(pkgType = "binary")
+if (!require("pacman")) install.packages("pacman")
 
-library(here) # File path referencing
-library(data.table) # Fast reading/writing
-library(janitor) # Rounding
-library(dplyr) # General data manipulation
-library(tidyr) # More general data manipulation
-library(ggplot2) # General plotting
-library(sf) # Geospatial mapping
-library(scales) # Commas for legend
-library(stringr) # str_detect()
-library(knitr) # include_graphics()
-library(cowplot) # extra plotting functions
+pacman::p_load(
+  here, # File path referencing
+  data.table, # Fast reading/writing
+  janitor, # Rounding
+  dplyr, # General data manipulation
+  tidyr, # More general data manipulation
+  ggplot2, # General plotting
+  sf, # Geospatial mapping
+  scales, # Commas for legend
+  stringr, # str_detect()
+  knitr, # include_graphics()
+  cowplot # Extra plotting functions
+)
 ```
 
   
@@ -186,12 +180,11 @@ p_map <- df_grouped %>%
   shape_one_england() %>%
   ggplot() +
   geom_sf(
-    aes(geometry = geometry, fill = fill_grouped), 
+    aes(fill = fill_grouped), 
     colour = NA
   ) +
   geom_sf(
     data = shape_two %>% shape_two_england,
-    aes(geometry = geometry),
     fill = NA,
     size = 0.1,
     colour = boundary_colour
@@ -204,10 +197,12 @@ p_map <- df_grouped %>%
     caption = "Caption / data source details can go down here."
   ) +
   theme_void(base_size = 18, base_family = "sans") +
-  theme(legend.position = c(0.84, 0.93),
-        plot.margin = margin(0, 10, 10, 10),
-        plot.title = element_text(face = "bold"),
-        plot.title.position = "plot")
+  theme(
+    legend.position = c(0.84, 0.93),
+    plot.margin = margin(0, 10, 10, 10),
+    plot.title = element_text(face = "bold"),
+    plot.title.position = "plot"
+  )
 
 ggsave(p_map, dpi = 300, width = 12, height = 14, units = "in",
        filename = here("2 - Templates", "output_vis", "choropleth_2area.jpeg"))
