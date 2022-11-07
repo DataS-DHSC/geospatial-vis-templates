@@ -135,7 +135,7 @@ Now it's time to plot a choropleth map of England.
 :red_circle: You can change the text in `labs()`, change or remove the boundary line colour with `boundary_line`, and change the file name in `ggsave()`.
 ```{r}
 # Choose between "black" or "white" or use NA (without quotes) to remove entirely.
-boundary_colour <- "white"
+boundary_colour <- "black"
 
 p_map <- df_grouped %>%
   shape_one_england() %>%
