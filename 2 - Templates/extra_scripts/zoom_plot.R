@@ -4,14 +4,16 @@ zoom_plot <- function(title_text, coords) {
   df_grouped %>% 
     shape_one_england() %>% 
     ggplot() + 
-    geom_sf(aes(geometry = geometry,
-                fill = fill_grouped),
-            colour = NA) + 
-    geom_sf(data = shape_two %>% shape_two_england(),
-            aes(geometry = geometry),
-            fill = NA,
-            colour = boundary_colour,
-            size = 0.1) +
+    geom_sf(
+      aes(fill = fill_grouped),
+      colour = NA
+    ) + 
+    geom_sf(
+      data = shape_two %>% shape_two_england(),
+      fill = NA,
+      colour = boundary_colour,
+      size = 0.1
+    ) +
     labs(title = title_text) + 
     fill_scale_final + 
     xlim(coords[1], coords[2]) +
@@ -19,6 +21,8 @@ zoom_plot <- function(title_text, coords) {
     coord_sf(expand = FALSE, 
              clip = "on") + 
     theme_void() + 
-    theme(legend.position = "none",
-          plot.margin = margin(0, 0, 0, 0))
+    theme(
+      legend.position = "none",
+      plot.margin = margin(0, 0, 0, 0)
+    )
 }

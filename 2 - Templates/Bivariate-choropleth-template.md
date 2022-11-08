@@ -1,8 +1,8 @@
-Bivariate choropleth map of England (work in progress)
+Bivariate choropleth map of England
 ================
 
 The code below can be used to create a bivariate choropleth map of
-England.  
+England, with optional zoomed in areas of interest.  
   
 The :red\_circle: symbol is used where you may need to edit code,
 download something, or make a choice before running the next code
@@ -11,28 +11,22 @@ chunk.
 Firstly, install and load the following packages.
 
 ``` r
-# install.packages("here", type = "binary")
-# install.packages("data.table", type = "binary")
-# install.packages("janitor", type = "binary")
-# install.packages("dplyr", type = "binary")
-# install.packages("ggplot2", type = "binary")
-# install.packages("sf", type = "binary")
-# install.packages("scales", type = "binary")
-# install.packages("stringr", type = "binary")
-# install.packages("knitr", type = "binary")
-# install.packages("cowplot", type = "binary")
+options(pkgType = "binary")
+if (!require("pacman")) install.packages("pacman")
 
-library(here) # File path referencing
-library(data.table) # Fast reading/writing
-library(janitor) # Rounding
-library(dplyr) # General data manipulation
-library(tidyr) # More general data manipulation
-library(ggplot2) # General plotting
-library(sf) # Geospatial mapping
-library(scales) # Commas for legend
-library(stringr) # str_detect()
-library(knitr) # include_graphics()
-library(cowplot) # extra plotting functions
+pacman::p_load(
+  here, # File path referencing
+  data.table, # Fast reading/writing
+  janitor, # Rounding
+  dplyr, # General data manipulation
+  tidyr, # More general data manipulation
+  ggplot2, # General plotting
+  sf, # Geospatial mapping
+  scales, # Commas for legend
+  stringr, # str_detect()
+  knitr, # include_graphics()
+  cowplot # Extra plotting functions
+)
 ```
 
   
@@ -102,56 +96,53 @@ df_measure_shape %>%
     ## 1 E02006781        NA        NA
 
   
-
-:red\_circle: Edit the legend axis labels in `labs()`
+:red\_circle: Choose a bivariate colour palette. The following are
+colourblind-accessible palettes.
 
 ``` r
-# Colours from viridis, change to pal brewer.seqseq2 or brewer.greenblue ?
-# https://kwstat.github.io/pals/reference/bivariate.html
-bivariate_palette = c(
-  "#E8F4F3", # low x, low y
-  "#DDF2C0", # low x, med y
-  "#FEF287", # low x, high y
-  "#C2BDD6", # med x, low y
-  "#85C2C0", # med x, med y
-  "#72CF8E", # med x, high y
-  "#9874A1", # high x, low y
-  "#6380A6", # high x, med y
-  "#21908D", # high x, high y
+# Palette from stevens.greenblue
+bivariate_palette <- c(
+  "#E8E8E8", # low a, low b
+  "#B8D6BE", # low a, med b
+  "#73AE80", # low a, high b
+  "#B5C0DA", # med a, low b
+  "#90B2B3", # med a, med b
+  "#5A9178", # med a, high b
+  "#6C83B5", # high a, low b
+  "#567994", # high a, med b
+  "#2A5A5B", # high a, high b
   "grey80"   # Missing data
 )
 
-df <- tibble(
-  x = c(1, 1, 1, 2, 2, 2, 3, 3, 3),
-  y = c(1:3, 1:3, 1:3),
-  bivariate_grouping = factor(1:9)
-)
+# Palette from viridis
+# bivariate_palette <- c("#E8F4F3", "#DDF2C0", "#FEF287", "#C2BDD6", "#85C2C0", "#72CF8E", "#9874A1", "#6380A6", "#21908D", "grey80")
 
-legend_bivariate <- df %>% 
-  ggplot(aes(x, y, fill = bivariate_grouping)) + 
-  geom_tile() + 
-  scale_fill_manual(values = bivariate_palette) + 
-  labs(
-    x = paste("Higher measure a", sprintf("\u2794")),
-    y = paste("Higher measure b", sprintf("\u2794")),
-  ) + 
-  coord_fixed() + 
-  theme(
-    legend.position = "none",
-    axis.text = element_blank(),
-    axis.ticks = element_blank(),
-    panel.background = element_blank(),
-    axis.title = element_text(size = 18, family = "sans")
-  )
+# Palette from brewer.seqseq2 (use white borders)
+# bivariate_palette <- c("#F3F3F3", "#F3E6B3", "#F3B300", "#B4D3E1", "#B3B3B3", "#B36600", "#509DC2", "#376387", "#000000", "grey80")
 ```
+
+  
+Now we can using the [scale\_bivariate
+function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/scale_bivariate.R)
+which automatically generates a bivariate scale for the fill legend.  
+:red\_circle: Change the legend labels in `measure_a_label` and
+`measure_b_label`.
 
 ``` r
 source(here("2 - Templates", "extra_scripts", "scale_bivariate.R"))
+
+df_grouped <- scale_bivariate(
+  df_measure_shape,
+  measure_a_label = "Higher measure a", 
+  measure_b_label = "Higher measure b"
+)
 ```
 
   
-
-  
+Now it’s time to plot a choropleth map of England.  
+:red\_circle: You can change the text in `labs()`, change or remove the
+boundary line colour with `boundary_line`, and change the file name in
+`ggsave()`.  
 
 ``` r
 boundary_colour <- "black"
@@ -160,16 +151,15 @@ p_map <- df_grouped %>%
   shape_one_england() %>%
   ggplot() +
   geom_sf(
-    aes(geometry = geometry, fill = fill_grouped), 
+    aes(fill = fill_grouped), 
     colour = NA) +
   geom_sf(
     data = shape_two %>% shape_two_england,
-          aes(geometry = geometry),
-          fill = NA,
-          size = 0.1,
-          colour = boundary_colour
-    ) +
-  fill_scale_bivariate +
+    fill = NA,
+    size = 0.1,
+    colour = boundary_colour
+  ) +
+  fill_scale_final +
   coord_sf(expand = FALSE, clip = "off") +
   labs(
     title = "Chart title goes here",
@@ -177,17 +167,65 @@ p_map <- df_grouped %>%
     caption = "Caption / data source details can go down here."
   ) +
   theme_void(base_size = 18, base_family = "sans") +
-  theme(legend.position = "none",
-        plot.margin = margin(0, 10, 10, 10),
-        plot.title = element_text(face = "bold"),
-        plot.title.position = "plot")
+  theme(
+    legend.position = "none",
+    plot.margin = margin(0, 10, 10, 10),
+    plot.title = element_text(face = "bold"),
+    plot.title.position = "plot"
+  )
 
 p_map_legend <- ggdraw() + 
   draw_plot(p_map, 0, 0, 1, 1) + 
-  draw_plot(legend_bivariate, 0.03, 0.331, 0.25)
+  draw_plot(legend_bivariate, 0.72, 0.37, 0.25)
 
 ggsave(p_map_legend, dpi = 300, width = 12, height = 14, units = "in",
        filename = here("2 - Templates", "output_vis", "choropleth_2area_bivariate.jpeg"))
 ```
 
-![](output_vis/choropleth_2area_bivariate.jpeg)
+![](output_vis/choropleth_2area_bivariate.jpeg)  
+We can also include zoomed in areas for locations of interest by using
+the [zoom\_plot
+function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/zoom_plot.R).
+
+``` r
+source(here("2 - Templates", "extra_scripts", "zoom_plot.R"))
+```
+
+  
+Now we can add in locations with coordinates of the areas of interest.  
+:red\_circle: Change the zoomed locations for the top, middle and bottom
+windows in `p_top`, `p_middle`, and `p_bottom`, respectively.
+
+``` r
+locations <- tibble(
+  `London` =  c(505000, 555000, 155000, 205000),
+  `Liverpool & Manchester` = c(320000, 410000, 375000, 425000),
+  `Leeds & Sheffield` = c(400000, 470000, 370000, 440000),
+  `Coventry & Birmingham` = c(380000, 450000, 250000, 320000),
+  `Cambridge` = c(500000, 570000, 220000, 290000),
+  `Oxford` = c(420000, 490000, 170000, 240000),
+  `Bristol` = c(310000, 380000, 140000, 210000)
+  )
+
+p_top <- zoom_plot("Leeds & Sheffield", locations$`Leeds & Sheffield`)
+p_middle <- zoom_plot("Coventry & Birmingham", locations$`Coventry & Birmingham`)
+p_bottom <- zoom_plot("London", locations$`London`)
+```
+
+  
+Finally, we can plot the different areas together.  
+:red\_circle: Again, you can change the file name in `ggsave()`.
+
+``` r
+p_map_zoom <- ggdraw() + 
+  draw_plot(p_map, 0, 0, 1, 1) + 
+  draw_plot(legend_bivariate, 0.72, 0.37, 0.25) + 
+  draw_plot(p_top, 0.03, 0.331, 0.25) + 
+  draw_plot(p_middle, 0.03, 0.097, 0.25) + 
+  draw_plot(p_bottom, 0.03, -0.137, 0.25)
+
+ggsave(p_map_zoom, dpi = 300, width = 12, height = 14, units = "in",
+       filename = here("2 - Templates", "output_vis", "choropleth_bivariate_zoom.jpeg"))
+```
+
+![](output_vis/choropleth_bivariate_zoom.jpeg)
