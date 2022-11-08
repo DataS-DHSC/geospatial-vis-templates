@@ -27,7 +27,7 @@ shape_one <- read_sf(here("1 - Data/shapefiles/LADs", "LAD_DEC_2021_UK_BFC.shp")
 
 df_measure_shape <- left_join(shape_one, df_measure, by = "area_code")
 
-shape_one_england <- function(df) {df %>% filter(str_detect(area_code, "^E"))} # Starts with "E"
+shape_one_england <- function(df) {df %>% filter(str_detect(area_code, "^E"))}
 
 df_measure_shape %>% 
   tibble() %>% 
@@ -38,7 +38,7 @@ df_measure_shape %>%
 source(here("2 - Templates", "extra_scripts", "scale_quintile.R"))
 
 df_grouped <- scale_quintile(
-  round_to = 1, # Denomination to round to (min/max not rounded)
+  round_to = 100, # Denomination to round to
   decimal_places = 0 # Decimal places to round to (0 for count data)
 )
 
@@ -102,7 +102,8 @@ p_map <- df_grouped %>%
         plot.title.position = "plot")
 
 
-# Hex map, note that assign_polygons() can take a while to run.
+# Hex/square map, note that assign_polygons() can take a while to run. 
+# Only use if less than 500 areas. I.e. not for MSOA, or LSOA.
 
 new_cells_hex <- calculate_grid(shape = df_grouped %>% shape_one_england(), 
                                 grid_type = "hexagonal", seed = 3)
@@ -110,11 +111,14 @@ plot(new_cells_hex)
 df_grouped_hex <- assign_polygons(shape = df_grouped %>% shape_one_england(), 
                              new_polygons = new_cells_hex)
 
-new_cells_square <- calculate_grid(shape = original_shapes, grid_type = "regular", seed = 3)
-df_grouped_square <- assign_polygons(original_shapes, new_cells_square)
+new_cells_square <- calculate_grid(shape = df_grouped %>% shape_one_england(), 
+                                   grid_type = "regular", seed = 3)
+plot(new_cells_square)
+df_grouped_square <- assign_polygons(shape = df_grouped %>% shape_one_england(), 
+                                     new_cells_square)
 
 
-resulthex %>%
+df_grouped_square %>%
   ggplot() +
   geom_sf(
     aes(fill = fill_grouped), 
@@ -129,10 +133,12 @@ resulthex %>%
     caption = "Caption / data source details can go down here."
   ) +
   theme_void(base_size = 18, base_family = "sans") +
-  theme(legend.position = c(0.84, 0.93),
+  theme(
+    legend.position = c(0.84, 0.93),
         plot.margin = margin(0, 10, 10, 10),
         plot.title = element_text(face = "bold"),
-        plot.title.position = "plot")
+        plot.title.position = "plot"
+    )
 
 
 # Maybe use the premade hex maps for MSOA, LAD, then make a set of other grids?

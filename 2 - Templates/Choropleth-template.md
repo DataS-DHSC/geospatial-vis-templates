@@ -109,16 +109,18 @@ you’re using.
 ``` r
 source(here("2 - Templates", "extra_scripts", "scale_quintile.R"))
 
-df_grouped <- scale_quintile(
-  round_to = 0.1, # Denomination to round to (min/max not rounded)
-  decimal_places = 1 # Decimal places to round to (0 for count data)
-)
+df_grouped <- df_measure_shape %>% 
+  scale_quintile(
+    measure = measure, # Name of column containing our measure
+    round_to = 0.5, # Denomination to round to
+    decimal_places = 1 # Decimal places to round to (0 for count data)
+  )
 
 # Check legend labels look correct
 levels(df_grouped$fill_grouped)
 ```
 
-    ## [1] "89.7 - 94.5"  "86.7 - 89.6"  "81.9 - 86.6"  "72.8 - 81.8"  "38.1 - 72.7" 
+    ## [1] "89.5 - 94.5"  "86.5 - 89.0"  "82.0 - 86.0"  "73.0 - 81.5"  "38.0 - 72.5" 
     ## [6] "Missing data"
 
   
@@ -143,37 +145,16 @@ fill_palette <- c(
 
 names(fill_palette) <- levels(df_grouped$fill_grouped)
 fill_scale_final <- scale_fill_manual(values = fill_palette)
-
-# Test legend colours are correct, along with general distribution of the measure
-df_grouped %>% 
-  ggplot(aes(1, measure, fill = fill_grouped)) + 
-  geom_jitter(
-    height = 0,
-    shape = 21, 
-    size = 1.5,
-    stroke = 0,
-    colour = "transparent"
-  ) + 
-  theme_minimal() + 
-  theme(
-    axis.title.x = element_blank(),
-    axis.text.x = element_blank(),
-    axis.ticks.x = element_blank(),
-    panel.grid.major.x = element_blank(),
-    panel.grid.minor.x = element_blank()
-  ) + 
-  guides(fill = guide_legend(override.aes = list(size = 10, shape = 22))) + 
-  fill_scale_final
 ```
 
-![](Choropleth-template_files/figure-gfm/unnamed-chunk-8-1.png)<!-- -->  
+  
 Now it’s time to plot a choropleth map of England.  
 :red\_circle: You can change the text in `labs()`, change or remove the
 boundary line colour with `boundary_line`, and change the file name in
 `ggsave()`.
 
 ``` r
-# Choose between "black" or "white" or use NA (without quotes) to remove entirely.
+# Choose between "black" or "white" or use NA (no quotes) to remove entirely.
 boundary_colour <- "black"
 
 p_map <- df_grouped %>%
