@@ -37,7 +37,7 @@ In this example, I read coronavirus vaccination data from a csv. You may
 read your data in from an excel file, api, or something else.
 
 ``` r
-df_measure <- fread(here("1 - Data/example_data", "example_data_msoa.csv")) %>% 
+df_measure <- fread(here("1 - Data", "DRAFT_Care_Access_Index_England.csv")) %>% 
   tibble()
 ```
 
@@ -48,14 +48,16 @@ Portal](https://geoportal.statistics.gov.uk/) and read them in below.
 In this example we’ll load in Middle Layer Super Output Areas (MSOA) and
 Local Authority Districts (LAD).  
 `shape_one` is the area to be filled with colour, whilst `shape_two`
-will provide the boundary lines. These can be the same.
+will provide the boundary lines. These can be the same. **AP QA
+comment**: Is it true that shape one has to correspond to the area code
+in your data?
 
 ``` r
-shape_one <- read_sf(here("1 - Data/shapefiles/MSOAs", "Middle_Layer_Super_Output_Areas__December_2011__Boundaries_Full_Clipped__BFC__EW_V3.shp")) %>% 
-  rename(area_code = MSOA11CD)
+shape_one <- read_sf(here("1 - Data/shapefiles/LSOAs", "Lower_Layer_Super_Output_Areas_(December_2011)_Boundaries_Super_Generalised_Clipped_(BSC)_EW_V3.shp")) %>% 
+  rename(area_code = LSOA11CD)
 
-shape_two <- read_sf(here("1 - Data/shapefiles/LADs", "LAD_DEC_2021_UK_BFC.shp")) %>% 
-  rename(area_code = LAD21CD)
+shape_two <- read_sf(here("1 - Data/shapefiles/Regions", "RGN_DEC_2021_EN_BUC.shp")) %>% 
+  rename(area_code = RGN21CD)
 ```
 
   
@@ -81,6 +83,8 @@ shape_two_england <- function(df) {df %>% filter(str_detect(area_code, "^E"))} #
   
 Check to see which, if any, areas have missing data.  
 More missing than expected? You may have chosen the wrong shapefile.
+**AP QA Comment: I think this is a great step. Could we suggest in what
+way the shapefile might be wrong (i.e. out of date etc.)?**
 
 ``` r
 df_measure_shape %>% 
@@ -90,10 +94,13 @@ df_measure_shape %>%
   select(area_code, measure)
 ```
 
-    ## # A tibble: 1 x 2
+    ## # A tibble: 4 x 2
     ##   area_code measure
     ##   <chr>       <dbl>
-    ## 1 E02006781      NA
+    ## 1 E01027479      NA
+    ## 2 E01027503      NA
+    ## 3 E01027742      NA
+    ## 4 E01027753      NA
 
   
 Now we need to make the `fill_grouped` column to split the measure into
@@ -112,16 +119,16 @@ source(here("2 - Templates", "extra_scripts", "scale_quintile.R"))
 df_grouped <- df_measure_shape %>% 
   scale_quintile(
     measure = measure, # Name of column containing our measure
-    round_to = 0.5, # Denomination to round to
-    decimal_places = 1 # Decimal places to round to (0 for count data)
+    round_to = 0.0001, # Denomination to round to
+    decimal_places = 5 # Decimal places to round to (0 for count data)
   )
 
 # Check legend labels look correct
 levels(df_grouped$fill_grouped)
 ```
 
-    ## [1] "89.5 - 94.5"  "86.5 - 89.0"  "82.0 - 86.0"  "73.0 - 81.5"  "38.0 - 72.5" 
-    ## [6] "Missing data"
+    ## [1] "0.2071 - 4.9715" "0.1541 - 0.2070" "0.1199 - 0.1540" "0.0906 - 0.1198"
+    ## [5] "0.0057 - 0.0905" "Missing data"
 
   
 :red\_circle: If your measure is already grouped into categories, name
@@ -150,12 +157,13 @@ fill_scale_final <- scale_fill_manual(values = fill_palette)
   
 Now it’s time to plot a choropleth map of England.  
 :red\_circle: You can change the text in `labs()`, change or remove the
-boundary line colour with `boundary_line`, and change the file name in
-`ggsave()`.
+boundary line colour with `boundary_line`,**AP QA Comment:
+boundary\_colour? This is just the boundary of shape 2** and change the
+file name in `ggsave()`.
 
 ``` r
 # Choose between "black" or "white" or use NA (no quotes) to remove entirely.
-boundary_colour <- "black"
+boundary_colour <- "white"
 
 p_map <- df_grouped %>%
   shape_one_england() %>%
@@ -173,9 +181,9 @@ p_map <- df_grouped %>%
   fill_scale_final +
   coord_sf(expand = FALSE, clip = "off") +
   labs(
-    title = "Chart title goes here",
-    fill = "Legend title goes here",
-    caption = "Caption / data source details can go down here."
+    title = "Care Home Accessibility",
+    fill = "Population Adjusted Beds Metric",
+    caption = "This is a test lalala."
   ) +
   theme_void(base_size = 18, base_family = "sans") +
   theme(
@@ -186,7 +194,7 @@ p_map <- df_grouped %>%
   )
 
 ggsave(p_map, dpi = 300, width = 12, height = 14, units = "in",
-       filename = here("2 - Templates", "output_vis", "choropleth_2area.jpeg"))
+       filename = here("2 - Templates", "output_vis", "ailsafile.jpeg"))
 ```
 
 ![](output_vis/choropleth_2area.jpeg)  
@@ -214,8 +222,8 @@ locations <- tibble(
   `Bristol` = c(310000, 380000, 140000, 210000)
   )
 
-p_top <- zoom_plot("Leeds & Sheffield", locations$`Leeds & Sheffield`)
-p_middle <- zoom_plot("Coventry & Birmingham", locations$`Coventry & Birmingham`)
+p_top <- zoom_plot("Cambridge", locations$`Cambridge`)
+p_middle <- zoom_plot("Oxford", locations$`Oxford`)
 p_bottom <- zoom_plot("London", locations$`London`)
 ```
 
@@ -231,7 +239,7 @@ p_map_zoom <- ggdraw() +
   draw_plot(p_bottom, 0.03, -0.137, 0.25)
 
 ggsave(p_map_zoom, dpi = 300, width = 12, height = 14, units = "in",
-       filename = here("2 - Templates", "output_vis", "choropleth_2area_zoom.jpeg"))
+       filename = here("2 - Templates", "output_vis", "ailsafile2.jpeg"))
 ```
 
 ![](output_vis/choropleth_2area_zoom.jpeg)

@@ -33,7 +33,7 @@ pacman::p_load(
 \
 In this example, I read coronavirus vaccination data from a csv. You may read your data in from an excel file, api, or something else.
 ```{r warning=FALSE}
-df_measure <- fread(here("1 - Data/example_data", "example_data_msoa.csv")) %>% 
+df_measure <- fread(here("1 - Data", "data.csv")) %>% 
   tibble()
 ```
 \
@@ -43,12 +43,13 @@ df_measure <- fread(here("1 - Data/example_data", "example_data_msoa.csv")) %>%
 In this example we'll load in Middle Layer Super Output Areas (MSOA) and Local Authority Districts (LAD).
 \
 `shape_one` is the area to be filled with colour, whilst `shape_two` will provide the boundary lines. These can be the same.
+**AP QA comment**: Is it true that shape one has to correspond to the area code in your data?
 ```{r warning=FALSE}
-shape_one <- read_sf(here("1 - Data/shapefiles/MSOAs", "Middle_Layer_Super_Output_Areas__December_2011__Boundaries_Full_Clipped__BFC__EW_V3.shp")) %>% 
-  rename(area_code = MSOA11CD)
+shape_one <- read_sf(here("1 - Data/shapefiles/ICBs", "ICB_JUL_2022_EN_BUC_V3.shp")) %>% 
+  rename(area_code = ICB22CD)
 
-shape_two <- read_sf(here("1 - Data/shapefiles/LADs", "LAD_DEC_2021_UK_BFC.shp")) %>% 
-  rename(area_code = LAD21CD)
+shape_two <- read_sf(here("1 - Data/shapefiles/ICBs", "ICB_JUL_2022_EN_BUC_V3.shp")) %>% 
+  rename(area_code = ICB22CD)
 ```
 \
 Join the shapefile for `shape_one` with your data:
@@ -66,7 +67,7 @@ shape_two_england <- function(df) {df %>% filter(str_detect(area_code, "^E"))} #
 \
 Check to see which, if any, areas have missing data.
 \
-More missing than expected? You may have chosen the wrong shapefile.
+More missing than expected? You may have chosen the wrong shapefile. **AP QA Comment: I think this is a great step. Could we suggest in what way the shapefile might be wrong (i.e. out of date etc.)?**
 ```{r}
 df_measure_shape %>% 
   tibble() %>% 
@@ -78,16 +79,18 @@ df_measure_shape %>%
 Now we need to make the `fill_grouped` column to split the measure into groups for the fill legend...
 \
 \
-:red_circle: If your measure is continuous or count data, you can use the [scale_quintile function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/scale_quintile.R) which automatically generate quintiles for the fill legend. Choose the `round_to` and `decimal_places` values depending on the type of data you're using.
+:red_circle: If your measure is continuous or count data, you can use the [scale_quintile function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/scale_quintile.R) which automatically generate quintiles for the fill legend. Choose the `round_to` and `decimal_places` values depending on the type of data you're using. 
 ```{r}
-source(here("2 - Templates", "extra_scripts", "scale_quintile.R"))
+#source(here("2 - Templates", "extra_scripts", "scale_quintile.R"))
 
-df_grouped <- df_measure_shape %>% 
-  scale_quintile(
-    measure = measure, # Name of column containing our measure
-    round_to = 0.5, # Denomination to round to
-    decimal_places = 1 # Decimal places to round to (0 for count data)
-  )
+#df_grouped <- df_measure_shape %>% 
+#  scale_quintile(
+#    measure = measure, # Name of column containing our measure
+#    round_to = 0.0001, # Denomination to round to
+#    decimal_places = 5 # Decimal places to round to (0 for count data)
+#  )
+
+df_grouped <- rename(df_measure_shape, fill_grouped = measure) 
 
 # Check legend labels look correct
 levels(df_grouped$fill_grouped)
@@ -101,7 +104,7 @@ If you used `scale_quintile()`, just run the follow code chunk without changing 
 fill_palette <- c(
   "#294011", # Q5 (Highest values)
   "#4C721D", # Q4
-  "#589325", # Q3
+#  "#589325", # Q3
   "#88D147", # Q2
   "#D7EFC3", # Q1 (Lowest values)
   "grey80" # For missing data
@@ -113,16 +116,16 @@ fill_scale_final <- scale_fill_manual(values = fill_palette)
 \
 Now it's time to plot a choropleth map of England.
 \
-:red_circle: You can change the text in `labs()`, change or remove the boundary line colour with `boundary_line`, and change the file name in `ggsave()`.
+:red_circle: You can change the text in `labs()`, change or remove the boundary line colour with `boundary_line`,**AP QA Comment: boundary_colour? This is just the boundary of shape 2** and change the file name in `ggsave()`. **AP: For plotting a categorical measure I had to change fill = fill_grouped to fill = factor(fill_grouped) but I still get errors on the zoom plot**
 ```{r}
 # Choose between "black" or "white" or use NA (no quotes) to remove entirely.
-boundary_colour <- "black"
+boundary_colour <- "white"
 
 p_map <- df_grouped %>%
   shape_one_england() %>%
   ggplot() +
   geom_sf(
-    aes(fill = fill_grouped), 
+    aes(fill = factor(fill_grouped)), 
     colour = NA
   ) +
   geom_sf(
@@ -134,9 +137,9 @@ p_map <- df_grouped %>%
   fill_scale_final +
   coord_sf(expand = FALSE, clip = "off") +
   labs(
-    title = "Chart title goes here",
-    fill = "Legend title goes here",
-    caption = "Caption / data source details can go down here."
+    title = "Care Home Accessibility",
+    fill = "Population Adjusted Beds Metric",
+    caption = "This is a test lalala."
   ) +
   theme_void(base_size = 18, base_family = "sans") +
   theme(
@@ -147,7 +150,7 @@ p_map <- df_grouped %>%
   )
 
 ggsave(p_map, dpi = 300, width = 12, height = 14, units = "in",
-       filename = here("2 - Templates", "output_vis", "choropleth_2area.jpeg"))
+       filename = here("2 - Templates", "output_vis", "ailsafile_cat.jpeg"))
 ```
 
 ![](output_vis/choropleth_2area.jpeg)
@@ -171,8 +174,8 @@ locations <- tibble(
   `Bristol` = c(310000, 380000, 140000, 210000)
   )
 
-p_top <- zoom_plot("Leeds & Sheffield", locations$`Leeds & Sheffield`)
-p_middle <- zoom_plot("Coventry & Birmingham", locations$`Coventry & Birmingham`)
+p_top <- zoom_plot("Cambridge", locations$`Cambridge`)
+p_middle <- zoom_plot("Oxford", locations$`Oxford`)
 p_bottom <- zoom_plot("London", locations$`London`)
 ```
 \
@@ -187,7 +190,7 @@ p_map_zoom <- ggdraw() +
   draw_plot(p_bottom, 0.03, -0.137, 0.25)
 
 ggsave(p_map_zoom, dpi = 300, width = 12, height = 14, units = "in",
-       filename = here("2 - Templates", "output_vis", "choropleth_2area_zoom.jpeg"))
+       filename = here("2 - Templates", "output_vis", "ailsafile2_cat.jpeg"))
 ```
 
 ![](output_vis/choropleth_2area_zoom.jpeg)
