@@ -16,7 +16,7 @@ if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load(
   here, # File path referencing
-  data.table, # Fast reading/writing
+  readr, # Reading data
   janitor, # Rounding
   dplyr, # General data manipulation
   tidyr, # More general data manipulation
@@ -25,7 +25,8 @@ pacman::p_load(
   scales, # Commas for legend
   stringr, # str_detect()
   knitr, # include_graphics()
-  cowplot # Extra plotting functions
+  cowplot, # Extra plotting functions
+  ggpattern # Plot patterns for missing data
 )
 ```
 
@@ -37,8 +38,7 @@ In this example, I read coronavirus vaccination data from a csv. You may
 read your data in from an excel file, api, or something else.
 
 ``` r
-df_measure_bivariate <- fread(here("1 - Data/example_data", "example_data_msoa_bivariate.csv")) %>% 
-  tibble()
+df_measure_bivariate <- read_csv(here("1 - Data/example_data", "example_data_msoa_bivariate.csv"))
 ```
 
   
@@ -152,19 +152,30 @@ p_map <- df_grouped %>%
   ggplot() +
   geom_sf(
     aes(fill = fill_grouped), 
-    colour = NA) +
+    colour = NA
+    ) +
   geom_sf(
     data = shape_two %>% shape_two_england,
     fill = NA,
     size = 0.1,
     colour = boundary_colour
   ) +
+  geom_sf_pattern(
+    data = . %>% filter(fill_grouped == "Missing data"),
+    aes(fill = fill_grouped),
+    pattern_colour = "grey60",
+    pattern_fill = "grey60",
+    pattern = "stripe",
+    pattern_density = 0.0004,
+    pattern_spacing = 0.004,
+    pattern_angle = 45,
+    pattern_res = 300
+  ) +
   fill_scale_final +
   coord_sf(expand = FALSE, clip = "off") +
   labs(
-    title = "Chart title goes here",
-    fill = "Legend title goes here",
-    caption = "Caption / data source details can go down here."
+    title = str_wrap("Chart title goes here", width = 80),
+    caption = str_wrap("Caption / data source details can go down here.", width = 80)
   ) +
   theme_void(base_size = 18, base_family = "sans") +
   theme(
