@@ -1,9 +1,8 @@
 # Script for crudely converting data from one shapefile to another, even if 
 # areas don't perfectly overlap.
 
-# Currently, this function only gives the weighted average from overlapping 
-# areas. So this wouldn't work for summing up count data from a group of 
-# smaller areas up to one biggest area, for example.
+# This function gives the weighted average from overlapping areas when 
+# type = "mean", and sums up the weighted count when type = "sum".
 
 options(pkgType = "binary")
 if (!require("pacman")) install.packages("pacman")
