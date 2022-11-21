@@ -11,11 +11,12 @@ pacman::p_load(
 
 check_palette <- function(p) {
   # choose the palette to check here
-  palette <- tolower(viridis_quintile)
+  palette <- tolower(p)
   palette_wbg <- c(
     "#ffffff", # white
     "#000000", # black
-    "grey80", # grey, commonly used for missing data
+    "#999999", # grey60, commonly used for missing data
+    "#CCCCCC", # grey80, commonly used for missing data
     palette
   )
   
@@ -48,23 +49,3 @@ ibm_palette <- c("#648FFF", "#785EF0", "#DC267F", "#FE6100", "#FFB000")
 
 check_palette(DHSC_accessible_5_g)
 
-# 
-# test %>% 
-#   pivot_longer(cols = -compare_to) %>% 
-#   mutate(
-#     value = as.numeric(value),
-#     name = factor(
-#       str_replace(name, "x_", "#"),
-#       levels = c(palette_wbg),
-#       ordered = TRUE
-#     )
-#   ) %>% 
-#   ggplot(aes(value, name, colour = compare_to, label = compare_to)) + 
-#   geom_point(size = 8) + 
-#   geom_vline(xintercept = 3) + 
-#   labs(
-#     x = "Contrast Ratio",
-#     y = "Colour"
-#   ) + 
-#   scale_colour_identity() + 
-#   scale_x_log10()

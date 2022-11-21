@@ -16,7 +16,7 @@ if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load(
   here, # File path referencing
-  data.table, # Fast reading/writing
+  readr, # Reading data
   janitor, # Rounding
   dplyr, # General data manipulation
   tidyr, # More general data manipulation
@@ -37,8 +37,7 @@ In this example, I read coronavirus vaccination data from a csv. You may
 read your data in from an excel file, api, or something else.
 
 ``` r
-df_measure <- fread(here("1 - Data/example_data", "example_data_msoa.csv")) %>% 
-  tibble()
+df_measure <- read_csv(here("1 - Data/example_data", "example_data_msoa.csv"))
 ```
 
   
@@ -83,7 +82,7 @@ Check to see which, if any, areas have missing data.
 More missing than expected? You may have chosen the wrong shapefile.
 
 ``` r
-df_measure_shape %>% 
+df_measure_shape %>%
   tibble() %>% 
   shape_one_england %>% 
   filter(is.na(measure)) %>% 
@@ -173,9 +172,9 @@ p_map <- df_grouped %>%
   fill_scale_final +
   coord_sf(expand = FALSE, clip = "off") +
   labs(
-    title = "Chart title goes here",
-    fill = "Legend title goes here",
-    caption = "Caption / data source details can go down here."
+    title = str_wrap("Chart title goes here", width = 80),
+    fill = str_wrap("Legend title goes here", width = 25),
+    caption = str_wrap("Caption / data source details can go down here.", width = 80)
   ) +
   theme_void(base_size = 18, base_family = "sans") +
   theme(
