@@ -14,7 +14,7 @@ Firstly, install and load the following packages.
 options(pkgType = "binary")
 if (!require("pacman")) install.packages("pacman")
 
-pacman::p_load(
+p_load(
   here, # File path referencing
   readr, # Reading data
   janitor, # Rounding
@@ -37,7 +37,7 @@ In this example, I read coronavirus vaccination data from a csv. You may
 read your data in from an excel file, api, or something else.
 
 ``` r
-df_measure <- read_csv(here("1 - Data/example_data", "example_data_msoa.csv"))
+df_measure <- read_csv(here("1 - Data", "example_data", "example_data_msoa.csv"))
 ```
 
   
@@ -50,10 +50,11 @@ Local Authority Districts (LAD).
 will provide the boundary lines. These can be the same.
 
 ``` r
-shape_one <- read_sf(here("1 - Data/shapefiles/MSOAs", "Middle_Layer_Super_Output_Areas__December_2011__Boundaries_Full_Clipped__BFC__EW_V3.shp")) %>% 
+shape_one <- read_sf(here("1 - Data", "shapefiles", "MSOAs", "Middle_Layer_Super_Output_Areas__December_2011__Boundaries_Full_Clipped__BFC__EW_V3.shp")) %>% 
   rename(area_code = MSOA11CD)
 
-shape_two <- read_sf(here("1 - Data/shapefiles/LADs", "LAD_DEC_2021_UK_BFC.shp")) %>% 
+shape_two <- read_sf(here("1 - Data", "shapefiles", "LADs", 
+                          "LAD_DEC_2021_UK_BFC.shp")) %>% 
   rename(area_code = LAD21CD)
 ```
 
@@ -73,8 +74,8 @@ STP, Cancer Alliance, and Strategic Clinical Network.
 you will need to alter the code below before running.
 
 ``` r
-shape_one_england <- function(df) {df %>% filter(str_detect(area_code, "^E"))} # Starts with "E"
-shape_two_england <- function(df) {df %>% filter(str_detect(area_code, "^E"))} # Starts with "E"
+shape_one_england <- function(df) {df %>% filter(str_detect(area_code, "^E"))}
+shape_two_england <- function(df) {df %>% filter(str_detect(area_code, "^E"))}
 ```
 
   
@@ -111,7 +112,7 @@ source(here("2 - Templates", "extra_scripts", "scale_quintile.R"))
 df_grouped <- df_measure_shape %>% 
   scale_quintile(
     measure = measure, # Name of column containing our measure
-    round_to = 0.5, # Denomination to round to
+    round_to = 0.5,    # Denomination to round to
     decimal_places = 1 # Decimal places to round to (0 for count data)
   )
 
@@ -139,7 +140,7 @@ fill_palette <- c(
   "#589325", # Q3
   "#88D147", # Q2
   "#D7EFC3", # Q1 (Lowest values)
-  "grey80" # For missing data
+  "grey80"   # For missing data
   )
 
 names(fill_palette) <- levels(df_grouped$fill_grouped)
@@ -164,7 +165,7 @@ p_map <- df_grouped %>%
     colour = NA
   ) +
   geom_sf(
-    data = shape_two %>% shape_two_england,
+    data = shape_two_england(shape_two),
     fill = NA,
     size = 0.1,
     colour = boundary_colour
@@ -204,7 +205,7 @@ windows in `p_top`, `p_middle`, and `p_bottom`, respectively.
 
 ``` r
 locations <- tibble(
-  `London` =  c(505000, 555000, 155000, 205000),
+  `London` = c(505000, 555000, 155000, 205000),
   `Liverpool & Manchester` = c(320000, 410000, 375000, 425000),
   `Leeds & Sheffield` = c(400000, 470000, 370000, 440000),
   `Coventry & Birmingham` = c(380000, 450000, 250000, 320000),
@@ -230,7 +231,8 @@ p_map_zoom <- ggdraw() +
   draw_plot(p_bottom, 0.03, -0.137, 0.25)
 
 ggsave(p_map_zoom, dpi = 300, width = 12, height = 14, units = "in",
-       filename = here("2 - Templates", "output_vis", "choropleth_2area_zoom.jpeg"))
+       filename = here("2 - Templates", "output_vis", 
+                       "choropleth_2area_zoom.jpeg"))
 ```
 
 ![](output_vis/choropleth_2area_zoom.jpeg)
