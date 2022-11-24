@@ -1,4 +1,6 @@
-# `scale_quintile()` splits your measures into three equally sized groups, combines those into a bivariate scale with nine groups, then creates a legend to explain it.
+# `scale_quintile()` splits your measures into three equally sized groups, 
+# combines those into a bivariate scale with nine groups, then creates a legend 
+# to explain it.
 
 scale_bivariate <- function(
   df, 

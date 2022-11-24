@@ -14,7 +14,7 @@ Firstly, install and load the following packages.
 options(pkgType = "binary")
 if (!require("pacman")) install.packages("pacman")
 
-p_load(
+pacman::p_load(
   here, # File path referencing
   readr, # Reading data
   janitor, # Rounding
