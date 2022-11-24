@@ -15,6 +15,11 @@
 [![](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/output_vis/choropleth_2area_hex.jpeg)](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/Hex-cartogram-template.md)
 
 
-[Walkthrough for converting between spatial geometries](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/Converting-between-geometries.md)
+[Converting postcodes to points and areas](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/Converting-postcodes-to-points-and-areas.md)
 
-[![](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/output_vis/shape_convert_example.jpg)](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/Converting-between-geometries.md)
+[![](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/output_vis/shape_convert_example.jpg)](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/Converting-postcodes-to-points-and-areas.md)
+
+
+[Converting from one area to another](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/Converting-from-one-area-to-another.md)
+
+[![](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/output_vis/shape_convert_example_2.jpg)](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/Converting-from-one-area-to-another.md)
