@@ -37,7 +37,7 @@ In this example, I read coronavirus vaccination data from a csv. You may
 read your data in from an excel file, api, or something else.
 
 ``` r
-df_measure <- fread(here("1 - Data", "DRAFT_Care_Access_Index_England.csv")) %>% 
+df_measure <- fread(here("1 - Data", "data.csv")) %>% 
   tibble()
 ```
 
@@ -53,11 +53,11 @@ comment**: Is it true that shape one has to correspond to the area code
 in your data?
 
 ``` r
-shape_one <- read_sf(here("1 - Data/shapefiles/LSOAs", "Lower_Layer_Super_Output_Areas_(December_2011)_Boundaries_Super_Generalised_Clipped_(BSC)_EW_V3.shp")) %>% 
-  rename(area_code = LSOA11CD)
+shape_one <- read_sf(here("1 - Data/shapefiles/ICBs", "ICB_JUL_2022_EN_BUC_V3.shp")) %>% 
+  rename(area_code = ICB22CD)
 
-shape_two <- read_sf(here("1 - Data/shapefiles/Regions", "RGN_DEC_2021_EN_BUC.shp")) %>% 
-  rename(area_code = RGN21CD)
+shape_two <- read_sf(here("1 - Data/shapefiles/ICBs", "ICB_JUL_2022_EN_BUC_V3.shp")) %>% 
+  rename(area_code = ICB22CD)
 ```
 
   
@@ -94,13 +94,8 @@ df_measure_shape %>%
   select(area_code, measure)
 ```
 
-    ## # A tibble: 4 x 2
-    ##   area_code measure
-    ##   <chr>       <dbl>
-    ## 1 E01027479      NA
-    ## 2 E01027503      NA
-    ## 3 E01027742      NA
-    ## 4 E01027753      NA
+    ## # A tibble: 0 x 2
+    ## # ... with 2 variables: area_code <chr>, measure <int>
 
   
 Now we need to make the `fill_grouped` column to split the measure into
@@ -114,21 +109,23 @@ which automatically generate quintiles for the fill legend. Choose the
 you’re using.
 
 ``` r
-source(here("2 - Templates", "extra_scripts", "scale_quintile.R"))
+#source(here("2 - Templates", "extra_scripts", "scale_quintile.R"))
+
+#df_grouped <- df_measure_shape %>% 
+#  scale_quintile(
+#    measure = measure, # Name of column containing our measure
+#    round_to = 0.0001, # Denomination to round to
+#    decimal_places = 5 # Decimal places to round to (0 for count data)
+#  )
 
 df_grouped <- df_measure_shape %>% 
-  scale_quintile(
-    measure = measure, # Name of column containing our measure
-    round_to = 0.0001, # Denomination to round to
-    decimal_places = 5 # Decimal places to round to (0 for count data)
-  )
+  mutate(fill_grouped = factor(measure))
 
 # Check legend labels look correct
 levels(df_grouped$fill_grouped)
 ```
 
-    ## [1] "0.2071 - 4.9715" "0.1541 - 0.2070" "0.1199 - 0.1540" "0.0906 - 0.1198"
-    ## [5] "0.0057 - 0.0905" "Missing data"
+    ## [1] "1" "2" "3" "4"
 
   
 :red\_circle: If your measure is already grouped into categories, name
@@ -144,7 +141,7 @@ changing anything.
 fill_palette <- c(
   "#294011", # Q5 (Highest values)
   "#4C721D", # Q4
-  "#589325", # Q3
+#  "#589325", # Q3
   "#88D147", # Q2
   "#D7EFC3", # Q1 (Lowest values)
   "grey80" # For missing data
@@ -159,7 +156,9 @@ Now it’s time to plot a choropleth map of England.
 :red\_circle: You can change the text in `labs()`, change or remove the
 boundary line colour with `boundary_line`,**AP QA Comment:
 boundary\_colour? This is just the boundary of shape 2** and change the
-file name in `ggsave()`.
+file name in `ggsave()`. **AP: For plotting a categorical measure I had
+to change fill = fill\_grouped to fill = factor(fill\_grouped) but I
+still get errors on the zoom plot**
 
 ``` r
 # Choose between "black" or "white" or use NA (no quotes) to remove entirely.
@@ -194,7 +193,7 @@ p_map <- df_grouped %>%
   )
 
 ggsave(p_map, dpi = 300, width = 12, height = 14, units = "in",
-       filename = here("2 - Templates", "output_vis", "ailsafile.jpeg"))
+       filename = here("2 - Templates", "output_vis", "ailsafile_cat.jpeg"))
 ```
 
 ![](output_vis/choropleth_2area.jpeg)  
@@ -239,7 +238,7 @@ p_map_zoom <- ggdraw() +
   draw_plot(p_bottom, 0.03, -0.137, 0.25)
 
 ggsave(p_map_zoom, dpi = 300, width = 12, height = 14, units = "in",
-       filename = here("2 - Templates", "output_vis", "ailsafile2.jpeg"))
+       filename = here("2 - Templates", "output_vis", "ailsafile2_cat.jpeg"))
 ```
 
 ![](output_vis/choropleth_2area_zoom.jpeg)

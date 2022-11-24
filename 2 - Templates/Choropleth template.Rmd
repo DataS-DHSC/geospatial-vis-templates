@@ -90,7 +90,8 @@ Now we need to make the `fill_grouped` column to split the measure into groups f
 #    decimal_places = 5 # Decimal places to round to (0 for count data)
 #  )
 
-df_grouped <- rename(df_measure_shape, fill_grouped = measure) 
+df_grouped <- df_measure_shape %>% 
+  mutate(fill_grouped = factor(measure))
 
 # Check legend labels look correct
 levels(df_grouped$fill_grouped)
@@ -125,7 +126,7 @@ p_map <- df_grouped %>%
   shape_one_england() %>%
   ggplot() +
   geom_sf(
-    aes(fill = factor(fill_grouped)), 
+    aes(fill = fill_grouped), 
     colour = NA
   ) +
   geom_sf(
