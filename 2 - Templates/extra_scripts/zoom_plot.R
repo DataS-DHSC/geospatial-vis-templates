@@ -1,4 +1,5 @@
-# Create zoomed version of a map
+# Create zoomed version of a map - currently only to be used within the 
+# choropleth templates
 
 zoom_plot <- function(title_text, coords) {
   df_grouped %>% 
@@ -9,7 +10,7 @@ zoom_plot <- function(title_text, coords) {
       colour = NA
     ) + 
     geom_sf(
-      data = shape_two %>% shape_two_england(),
+      data = shape_two_england(shape_two),
       fill = NA,
       colour = boundary_colour,
       size = 0.1
@@ -18,8 +19,10 @@ zoom_plot <- function(title_text, coords) {
     fill_scale_final + 
     xlim(coords[1], coords[2]) +
     ylim(coords[3], coords[4]) +
-    coord_sf(expand = FALSE, 
-             clip = "on") + 
+    coord_sf(
+      expand = FALSE, 
+      clip = "on"
+      ) + 
     theme_void() + 
     theme(
       legend.position = "none",

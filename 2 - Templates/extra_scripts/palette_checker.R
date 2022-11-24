@@ -3,7 +3,7 @@
 options(pkgType = "binary")
 if (!require("pacman")) install.packages("pacman")
 
-p_load(
+pacman::p_load(
   tidyverse,
   janitor,
   savonliquide,

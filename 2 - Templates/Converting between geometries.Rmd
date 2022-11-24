@@ -1,16 +1,16 @@
 ---
-title: "Converting between spatial geometries"
+title: "Converting postcodes to points and areas"
 output:
   github_document
 ---
-In the walkthrough below, we'll convert data from postcode level, to latitude and longitude, to shapefile areas, and finally from one shapefile to another.
+In the walkthrough below, we'll convert data from postcode level, to latitude and longitude, and finally to geographic areas.
 \
 \
 ```{r message=FALSE, warning=FALSE}
 options(pkgType = "binary")
 if (!require("pacman")) install.packages("pacman")
 
-p_load(
+pacman::p_load(
   here, # File path referencing
   dplyr, # General data manipulation
   readr, # Reading data
@@ -22,6 +22,8 @@ p_load(
 ```
 \
 Firstly, we'll read in some postcode data.
+\
+The `weighting` column will be explained later.
 ```{r message=FALSE, warning=FALSE}
 measure_postcode <- read_csv(here("1 - Data", "example_data", 
                                   "example_data_postcode.csv")) %>% 
@@ -67,61 +69,32 @@ ggsave(basic_map_points, dpi = 300, width = 12, height = 14, units = "in",
 ```
 ![](output_vis/basic_map_points.jpeg)
 \
-Next, using the [shape_convert function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/shape_convert.R) we can take the points and convert them to Local Authority District (LAD). The contribution of each point to the aggregate measure at LAD level is weighted by our `weighting` column.
-```{r warning=FALSE}
-shape_lad <- read_sf(here("1 - Data", "shapefiles", "LADs", 
-                          "LAD_DEC_2021_UK_BFC.shp")) %>% 
-  rename(area_code = LAD21CD)
-
-# Force the points and area crs to match
-measure_latlong_match <- measure_latlong %>% 
-  st_transform(crs = st_crs(shape_lad)) %>% 
-  mutate(area_code = postcode)
-
-source(here("2 - Templates", "extra_scripts", "shape_convert.R"))
-
-measure_lad <- shape_convert(
-  old_shape = measure_latlong_match, 
-  new_shape = shape_lad, 
-  weight = "weighting",
-  type = "mean"
-  )
-```
-\
-Using new data converted to LADs, we can plot a choropleth map.
-```{r}
-basic_map_lad <- measure_lad %>%
-  filter(str_detect(area_code, "^E")) %>% 
-  ggplot() +
-  geom_sf(aes(fill = measure)) +
-  theme_void() +
-  scale_fill_viridis_c()
-
-ggsave(basic_map_lad, dpi = 300, width = 12, height = 14, units = "in",
-       filename = here("2 - Templates", "output_vis", "basic_map_lad.jpeg"))
-```
-![](output_vis/basic_map_lad.jpeg)
-\
-Finally, we can take the data at LAD level and convert it to Integrated Care Board (ICB) level.
-\
-Here we will only weight by the % overlap of the areas. This is just an example to show the functionality of `shape_convert()` In practice we could just convert points straight to ICB, or, if we started with areas, we could weight the aggregation by both percent overlap and a weighting column and use `weight = "weighting and overlap"`.
+Next, using the [shape_convert function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/shape_convert.R) we can take the points and convert them to  Integrated Care Boards (ICBs). The contribution of each point to the aggregate measure at ICB level is weighted by our `weighting` column.
 ```{r warning=FALSE}
 shape_icb <- read_sf(here("1 - Data", "shapefiles", "ICBs", 
                           "Integrated_Care_Boards_(July_2022)_EN_BFC.shp")) %>% 
   rename(area_code = ICB22CD)
 
+# Force the points and area crs to match
+measure_latlong_match <- measure_latlong %>% 
+  st_transform(crs = st_crs(shape_icb)) %>% 
+  mutate(area_code = postcode)
+
+source(here("2 - Templates", "extra_scripts", "shape_convert.R"))
+
 measure_icb <- shape_convert(
-  old_shape = measure_lad, 
+  old_shape = measure_latlong_match, 
   new_shape = shape_icb, 
-  weight = "overlap",
+  weight = "weighting",
   type = "mean"
   )
 ```
 \
-Using new data converted to ICBs, we can plot another choropleth map.
+Using new data converted to ICBs, we can plot a choropleth map. We can also avoid showing some ICB areas made up of a small number of points using the `count_overlap` column provided by the `shape_convert` function.
 ```{r}
 basic_map_icb <- measure_icb %>%
-  filter(str_detect(area_code, "^E")) %>% 
+  filter(str_detect(area_code, "^E")) %>% # England only
+  mutate(measure = ifelse(count_overlap >= 5, measure, NA)) %>% # at least 5 points
   ggplot() +
   geom_sf(aes(fill = measure)) +
   theme_void() +
@@ -131,4 +104,5 @@ ggsave(basic_map_icb, dpi = 300, width = 12, height = 14, units = "in",
        filename = here("2 - Templates", "output_vis", "basic_map_icb.jpeg"))
 ```
 ![](output_vis/basic_map_icb.jpeg)
+
 

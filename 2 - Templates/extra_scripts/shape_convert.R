@@ -31,7 +31,7 @@ pacman::p_load(
 shape_convert <- function(old_shape, new_shape, weight, type) {
   
   # Calculate the area of overlap between old and new areas
-  intersect_pct <<- st_intersection(old_shape, new_shape) %>% 
+  intersect_pct <- st_intersection(old_shape, new_shape) %>% 
     mutate(
       intersect_area = st_area(.),
       weighting = ifelse(str_detect(weight, "weighting"), weighting, 1)
@@ -46,7 +46,7 @@ shape_convert <- function(old_shape, new_shape, weight, type) {
     mutate(intersect_area = ifelse(weight == "none", 1, intersect_area))
   
   # Join the overlap data back to old shape to compare with original area
-  old_shape_joined <<- old_shape %>% 
+  old_shape_joined <- old_shape %>% 
     mutate(county_area = ifelse(weight == "none", 1, st_area(old_shape))) %>% 
     select(-contains("weighting")) %>% # so we don't end up with two of the same column
     merge(intersect_pct, by = "area_code", all.x = TRUE)
@@ -82,12 +82,14 @@ shape_convert <- function(old_shape, new_shape, weight, type) {
         type == "mean" ~ measure*prop_of_prop_inter_new,
         type == "sum" ~ measure*prop_inter
       ),
-      measure_new = sum(measure_weighted, na.rm = TRUE)
+      measure_new = sum(measure_weighted, na.rm = TRUE),
+      count_overlap = n()
     ) %>% 
     ungroup() %>% 
     select(
       area_code.1,
-      measure_new
+      measure_new,
+      count_overlap
     ) %>%
     distinct()
   

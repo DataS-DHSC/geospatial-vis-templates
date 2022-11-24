@@ -14,7 +14,7 @@ Firstly, install and load the following packages.
 options(pkgType = "binary")
 if (!require("pacman")) install.packages("pacman")
 
-p_load(
+pacman::p_load(
   here, # File path referencing
   readr, # Reading data
   janitor, # Rounding
@@ -37,7 +37,7 @@ shape_one <- read_sf(here("1 - Data/shapefiles/ICBs/Integrated_Care_Boards_(July
   rename(
     area_code = ICB22CD,
     area_name = ICB22NM
-    )
+  )
 
 df_measure_shape <- left_join(shape_one, df_measure, by = "area_code")
 
@@ -142,8 +142,8 @@ p_map_hex <- df_grouped_hex %>%
   guides(
     pattern = "none",
     fill = guide_legend(override.aes = list(
-    pattern = c("none", "none", "none", "none", "none", "stripe")
-  ))) + 
+      pattern = c("none", "none", "none", "none", "none", "stripe")
+    ))) + 
   coord_sf(expand = FALSE, clip = "off") +
   labs(
     title = str_wrap("Chart title goes here", width = 80),
