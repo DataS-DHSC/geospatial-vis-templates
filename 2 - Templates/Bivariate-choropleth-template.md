@@ -143,10 +143,11 @@ df_grouped <- scale_bivariate(
   
 Now it’s time to plot a choropleth map of England.  
 :red\_circle: You can change the text in `labs()`, change or remove the
-boundary line colour with `boundary_line`, and change the file name in
+boundary line colour with `boundary_colour`, and change the file name in
 `ggsave()`.  
 
 ``` r
+# Choose between "black" or "white" or use NA (no quotes) to remove entirely.
 boundary_colour <- "black"
 
 p_map <- df_grouped %>%

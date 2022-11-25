@@ -99,10 +99,10 @@ df_measure_shape %>%
 Now we need to make the `fill_grouped` column to split the measure into
 groups for the fill legend…  
   
-:red\_circle: If your measure is continuous or count data, you can use
-the [scale\_quintile
+:red\_circle: **If your measure is continuous or count data**, you can
+use the [scale\_quintile
 function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/scale_quintile.R)
-which automatically generate quintiles for the fill legend. Choose the
+which automatically generates quintiles for the fill legend. Choose the
 `round_to` and `decimal_places` values depending on the type of data
 you’re using.
 
@@ -116,41 +116,64 @@ df_grouped <- df_measure_shape %>%
     decimal_places = 1 # Decimal places to round to (0 for count data)
   )
 
-# Check legend labels look correct
-levels(df_grouped$fill_grouped)
-```
-
-    ## [1] "89.5 - 94.5"  "86.5 - 89.0"  "82.0 - 86.0"  "73.0 - 81.5"  "38.0 - 72.5" 
-    ## [6] "Missing data"
-
-  
-:red\_circle: If your measure is already grouped into categories, name
-the column `fill_grouped`, make sure to fill any NAs in with the text
-“Missing data”, call the tibble `df_grouped`, then edit the hex colour
-codes in `fill_palette` below to suit. The number of colours must match
-the number of categories in `fill_grouped`, including missing data.  
-  
-If you used `scale_quintile()`, just run the follow code chunk without
-changing anything.
-
-``` r
 fill_palette <- c(
-  "#294011", # Q5 (Highest values)
-  "#4C721D", # Q4
-  "#589325", # Q3
-  "#88D147", # Q2
-  "#D7EFC3", # Q1 (Lowest values)
-  "grey80"   # For missing data
+  "#294011", # 80-100th percentile
+  "#4C721D", # 60-80th percentile
+  "#589325", # 40-60th percentile
+  "#88D147", # 20-40th percentile
+  "#D7EFC3", # 0-20th percentile
+  "grey80"   # Missing data
   )
 
 names(fill_palette) <- levels(df_grouped$fill_grouped)
 fill_scale_final <- scale_fill_manual(values = fill_palette)
+
+# Check legend labels look correct
+fill_palette
+```
+
+    ##  89.5 - 94.5  86.5 - 89.0  82.0 - 86.0  73.0 - 81.5  38.0 - 72.5 Missing data 
+    ##    "#294011"    "#4C721D"    "#589325"    "#88D147"    "#D7EFC3"     "grey80"
+
+  
+:red\_circle: **If your measure is already grouped into categories**,
+call the tibble `df_grouped`, name the category column `fill_grouped`,
+make sure to call any NAs “Missing data”, make it an ordered factor with
+“Missing data” at the end.  
+Then edit the hex colour codes in `fill_palette` to suit. The number of
+colours must match the number of categories in `fill_grouped`, including
+missing data.  
+Your code may look something like this. In this example, we skip this
+code chunk.
+
+``` r
+df_grouped <- df_measure_shape %>% 
+  mutate(
+    fill_grouped = factor(
+      ifelse(!is.na(measure), measure, "Missing data"),
+      levels = c("High", "Medium", "Low", "Missing data"),
+      ordered = TRUE
+    )
+  )
+
+fill_palette <- c(
+  "#294011", # High
+  "#589325", # Medium
+  "#D7EFC3", # Low
+  "grey80"   # Missing data
+  )
+
+names(fill_palette) <- levels(df_grouped$fill_grouped)
+fill_scale_final <- scale_fill_manual(values = fill_palette)
+
+# Check legend labels look correct
+fill_palette
 ```
 
   
 Now it’s time to plot a choropleth map of England.  
 :red\_circle: You can change the text in `labs()`, change or remove the
-boundary line colour with `boundary_line`, and change the file name in
+boundary line colour with `boundary_colour`, and change the file name in
 `ggsave()`.
 
 ``` r
