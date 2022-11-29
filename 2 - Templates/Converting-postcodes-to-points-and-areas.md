@@ -10,12 +10,12 @@ options(pkgType = "binary")
 if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load(
-  here, # File path referencing
-  dplyr, # General data manipulation
-  readr, # Reading data
-  stringr, # str_detect()
-  ggplot2, # General plotting
-  sf, # Geospatial mapping
+  here,        # File path referencing
+  dplyr,       # General data manipulation
+  readr,       # Reading data
+  stringr,     # str_detect()
+  ggplot2,     # General plotting
+  sf,          # Geospatial mapping
   PostcodesioR # API wrapper for postcodes.io
 )
 ```

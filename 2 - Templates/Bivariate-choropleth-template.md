@@ -15,17 +15,16 @@ options(pkgType = "binary")
 if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load(
-  here, # File path referencing
-  readr, # Reading data
-  janitor, # Rounding
-  dplyr, # General data manipulation
-  tidyr, # More general data manipulation
-  ggplot2, # General plotting
-  sf, # Geospatial mapping
-  scales, # Commas for legend
-  stringr, # str_detect()
-  knitr, # include_graphics()
-  cowplot, # Extra plotting functions
+  here,     # File path referencing
+  readr,    # Reading data
+  janitor,  # Rounding
+  dplyr,    # General data manipulation
+  tidyr,    # More general data manipulation
+  ggplot2,  # General plotting
+  sf,       # Geospatial mapping
+  scales,   # Commas for legend
+  stringr,  # str_detect()
+  cowplot,  # Extra plotting functions
   ggpattern # Plot patterns for missing data
 )
 ```

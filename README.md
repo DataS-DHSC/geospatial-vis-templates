@@ -23,3 +23,8 @@
 [Converting from one area to another](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/Converting-from-one-area-to-another.md)
 
 [![](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/output_vis/shape_convert_example_2.jpg)](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/Converting-from-one-area-to-another.md)
+
+
+[Creating a lookup table between two geographies](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/Creating-a-lookup-table-between-two-geographies.md)
+
+[![](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/output_vis/shape_convert_example_3.jpg)](https://github.com/DataS-DHSC/geospatial-vis-templates/blob/master/2%20-%20Templates/Creating-a-lookup-table-between-two-geographies.md)
