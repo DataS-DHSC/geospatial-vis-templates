@@ -15,17 +15,16 @@ options(pkgType = "binary")
 if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load(
-  here, # File path referencing
-  readr, # Reading data
+  here,    # File path referencing
+  readr,   # Reading data
   janitor, # Rounding
-  dplyr, # General data manipulation
-  tidyr, # More general data manipulation
+  dplyr,   # General data manipulation
+  tidyr,   # More general data manipulation
   ggplot2, # General plotting
-  sf, # Geospatial mapping
-  scales, # Commas for legend
+  sf,      # Geospatial mapping
+  scales,  # Commas for legend
   stringr, # str_detect()
-  knitr, # include_graphics()
-  cowplot # Extra plotting functions
+  cowplot  # Extra plotting functions
 )
 ```
 
@@ -139,10 +138,9 @@ fill_palette
 :red\_circle: **If your measure is already grouped into categories**,
 call the tibble `df_grouped`, name the category column `fill_grouped`,
 make sure to call any NAs “Missing data”, make it an ordered factor with
-“Missing data” at the end.  
-Then edit the hex colour codes in `fill_palette` to suit. The number of
-colours must match the number of categories in `fill_grouped`, including
-missing data.  
+“Missing data” at the end, and edit the hex colour codes in
+`fill_palette` to suit. The number of colours must match the number of
+categories in `fill_grouped`, including missing data.  
 Your code may look something like this. In this example, we skip this
 code chunk.
 

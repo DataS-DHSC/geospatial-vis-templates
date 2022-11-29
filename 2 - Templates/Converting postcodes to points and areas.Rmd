@@ -11,12 +11,12 @@ options(pkgType = "binary")
 if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load(
-  here, # File path referencing
-  dplyr, # General data manipulation
-  readr, # Reading data
-  stringr, # str_detect()
-  ggplot2, # General plotting
-  sf, # Geospatial mapping
+  here,        # File path referencing
+  dplyr,       # General data manipulation
+  readr,       # Reading data
+  stringr,     # str_detect()
+  ggplot2,     # General plotting
+  sf,          # Geospatial mapping
   PostcodesioR # API wrapper for postcodes.io
 )
 ```
@@ -113,5 +113,3 @@ ggsave(basic_map_icb, dpi = 300, width = 12, height = 14, units = "in",
        filename = here("2 - Templates", "output_vis", "basic_map_icb.jpeg"))
 ```
 ![](output_vis/basic_map_icb.jpeg)
-
-

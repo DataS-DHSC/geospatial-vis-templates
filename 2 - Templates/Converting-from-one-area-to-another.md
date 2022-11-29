@@ -12,13 +12,13 @@ options(pkgType = "binary")
 if (!require("pacman")) install.packages("pacman")
 
 pacman::p_load(
-  here, # File path referencing
-  dplyr, # General data manipulation
+  here,    # File path referencing
+  dplyr,   # General data manipulation
   janitor, # clean_names
-  readr, # Reading data
+  readr,   # Reading data
   stringr, # str_detect()
   ggplot2, # General plotting
-  sf # Geospatial mapping
+  sf       # Geospatial mapping
 )
 ```
 
