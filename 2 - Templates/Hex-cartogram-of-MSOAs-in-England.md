@@ -32,7 +32,7 @@ pacman::p_load(
 
   
 :red\_circle: Write your own code to read in your data into a tibble
-called `df_measure` that includes the two columns `area_code` and
+called `msoa_measure` that includes the two columns `area_code` and
 `measure`.  
 In this example, I read coronavirus vaccination data from a csv. You may
 read your data in from an excel file, api, or something else.
@@ -132,7 +132,7 @@ fill_palette
 
   
 :red\_circle: **If your measure is already grouped into categories**,
-call the tibble `df_grouped`, name the category column `fill_grouped`,
+call the tibble `msoa_grouped`, name the category column `fill_grouped`,
 make sure to call any NAs “Missing data”, make it an ordered factor with
 “Missing data” at the end, and edit the hexadecimal colour codes in
 `fill_palette` to suit. The number of colours must match the number of
@@ -141,7 +141,7 @@ Your code may look something like this. In this example, we skip this
 code chunk.
 
 ``` r
-df_grouped <- df_measure_shape %>% 
+msoa_grouped <- msoa_measure_shape %>% 
   mutate(
     fill_grouped = factor(
       ifelse(!is.na(measure), measure, "Missing data"),
@@ -157,7 +157,7 @@ fill_palette <- c(
   "grey80"   # Missing data
   )
 
-names(fill_palette) <- levels(df_grouped$fill_grouped)
+names(fill_palette) <- levels(msoa_grouped$fill_grouped)
 fill_scale_final <- scale_fill_manual(values = fill_palette)
 
 # Check legend labels look correct
