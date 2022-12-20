@@ -26,11 +26,7 @@ pacman::p_load(
   stringr,     # str_detect()
   knitr,       # include_graphics()
   cowplot,     # Extra plotting functions
-  ggpattern,   # Plot patterns for missing data
-  geogrid,     # Hex cartograms
-  geofacet,    # Hex cartograms
   geojsonio,   # Reading in geojson files
-  readxl,      # Reading in Excel files
   savonliquide # contrast ratio checker
 )
 ```
