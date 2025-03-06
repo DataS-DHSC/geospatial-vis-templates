@@ -64,7 +64,7 @@ ggsave(basic_map_lsoa, dpi = 300, width = 12, height = 14, units = "in",
 ```
 
 ![](output_vis/basic_map_lsoa.jpeg)  
-Next, using the [shape\_convert
+Next, using the [shape_convert
 function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/shape_convert.R)
 we can take the LSOAs and convert them to LADs. The aggregated IMD score
 for LADs will be weighted by both the `weighting` column and the

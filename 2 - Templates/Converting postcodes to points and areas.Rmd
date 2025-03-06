@@ -52,7 +52,7 @@ measure_latlong <- measure_postcode %>%
     long = unlist(lat_long[2]),
   ) %>%
   ungroup() %>%
-  filter(!is.na(lat_long)) %>%
+  filter(!is.na(lat), !is.na(long)) %>%
   st_as_sf(coords = c("lat", "long"), crs = 4326)
 ```
 \

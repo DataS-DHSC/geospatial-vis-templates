@@ -54,9 +54,15 @@ measure_latlong <- measure_postcode %>%
     long = unlist(lat_long[2]),
   ) %>%
   ungroup() %>%
-  filter(!is.na(lat_long)) %>%
+  filter(!is.na(lat), !is.na(long)) %>%
   st_as_sf(coords = c("lat", "long"), crs = 4326)
 ```
+
+    ## [1] "Postcode RG21%207BA is incorrect or expired."
+    ## [1] "Postcode RH6%200RN is incorrect or expired."
+    ## [1] "Postcode KT3%204LW is incorrect or expired."
+    ## [1] "Postcode CV3%205HE is incorrect or expired."
+    ## [1] "Postcode MK9%203NT is incorrect or expired."
 
   
 Using new data converted to latitude and longitude, we can plot the
@@ -79,7 +85,7 @@ ggsave(basic_map_points, dpi = 300, width = 12, height = 14, units = "in",
 ```
 
 ![](output_vis/basic_map_points.jpeg)  
-Next, using the [shape\_convert
+Next, using the [shape_convert
 function](https://github.com/DataS-DHSC/geospatial-vis-templates/tree/master/2%20-%20Templates/extra_scripts/shape_convert.R)
 we can take the points and convert them to Integrated Care Boards
 (ICBs). The contribution of each point to the aggregate measure at ICB
