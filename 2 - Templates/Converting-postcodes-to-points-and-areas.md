@@ -107,7 +107,8 @@ measure_icb <- shape_convert(
   old_shape = measure_latlong_match, 
   new_shape = shape_icb, 
   weight = "weighting",
-  type = "mean"
+  type = "mean",
+  use_missing = TRUE
   )
 ```
 
@@ -120,7 +121,7 @@ function.
 ``` r
 basic_map_icb <- measure_icb %>%
   filter(str_detect(area_code, "^E")) %>% # England only
-  mutate(measure = ifelse(count_overlap >= 5, measure, NA)) %>% # at least 5 points
+  mutate(measure = ifelse(count_overlap >= 3, measure, NA)) %>% # at least 3 points
   ggplot() +
   geom_sf(
     aes(fill = measure),

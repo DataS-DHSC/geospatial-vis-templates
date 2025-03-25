@@ -80,7 +80,8 @@ measure_lad <- shape_convert(
   old_shape = measure_lsoa_shape, 
   new_shape = shape_lad,
   weight = "weighting and overlap",
-  type = "mean"
+  type = "mean",
+  use_missing = TRUE
   )
 ```
 

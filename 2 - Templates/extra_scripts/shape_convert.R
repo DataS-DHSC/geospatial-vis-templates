@@ -26,11 +26,39 @@ pacman::p_load(
 #'   - `"weighting and overlap"`: Combines both external weighting and
 #'   percentage overlap.
 #' @param type A character string to indicate whether we want the new area
-#' measure to be calculated as mean or sum or the old area measure.
+#' measure to be calculated as `"mean"` or `"sum"` or the old area measure.
+#' @param use_missing Logical. If `TRUE`, any missing measure data will not be
+#' included in the new measure. This is not recommended.
+#' @param extra_cols Logical. If `TRUE`, the function returns additional columns
+#' used to calculate the new data. This is for sense checking purposes.
 
-shape_convert <- function(old_shape, new_shape, weight, type = "sum") {
+shape_convert <- function(
+    old_shape,
+    new_shape,
+    weight = c("none", "weighting", "overlap", "weighting and overlap"),
+    type = c("sum", "mean"),
+    use_missing = FALSE,
+    extra_cols = FALSE
+) {
   
-  # Make them have the same CRS
+  # Pick first value as default for type
+  type = match.arg(type)
+  
+  # Check expected columns are present
+  if (!("area_code" %in% colnames(old_shape))) {
+    stop("`old_shape` needs a `area_code` column. Function stopped.")
+  }
+  
+  if (!("weighting" %in% colnames(old_shape) & str_detect(weight, "weighting"))) {
+    stop("`old_shape` needs a `weighting` column. Function stopped.")
+  }
+  
+  # Warn if user tries to use missing values
+  if (use_missing) {
+    warning("Including NA values is not recommended. Use extra_cols = FALSE and check for bad aggregations.")
+  }
+  
+  # Ensure they use the same coordinate reference system (CRS)
   if (st_crs(old_shape) != st_crs(new_shape)) {
     new_shape <- st_transform(new_shape, st_crs(old_shape))
   }
@@ -71,7 +99,7 @@ shape_convert <- function(old_shape, new_shape, weight, type = "sum") {
       )
     ) %>%
     st_drop_geometry() %>%
-    select(-contains("weighting")) %>% # just need one
+    select(-weighting) %>% # just need one
     left_join(intersect_pct, by = c("area_code" = "area_code_old")) %>%
     rename(area_code_old = area_code) %>%
     select(
@@ -90,7 +118,11 @@ shape_convert <- function(old_shape, new_shape, weight, type = "sum") {
     # you the % out of the total population in all old areas that intersect with
     # the new area.
     group_by(area_code_new) %>%
-    mutate(weighting_sum = sum(weighting)) %>%
+    mutate(weighting_sum = case_when(
+       !use_missing ~ sum(weighting),
+       use_missing ~ sum(weighting, na.rm = TRUE)
+    )
+    ) %>%
     group_by(area_code_old) %>%
     mutate(weighting_as_prop = weighting / weighting_sum) %>%
     ungroup() %>%
@@ -130,8 +162,10 @@ shape_convert <- function(old_shape, new_shape, weight, type = "sum") {
       # Create new weighted measure by summing or averaging these parts.
       # This structure feels quite confusing now, but the output data looks ok.
       measure_new = case_when(
-        type == "mean" ~ mean(measure_new_part, na.rm = TRUE),
-        type == "sum" ~ sum(measure_new_part, na.rm = TRUE)
+        type == "mean" & !use_missing ~ mean(measure_new_part),
+        type == "sum" & !use_missing ~ sum(measure_new_part),
+        type == "mean" & use_missing ~ mean(measure_new_part, na.rm = TRUE),
+        type == "sum" & use_missing ~ sum(measure_new_part, na.rm = TRUE)
       ),
       
       # Get a count of old areas that were used to make the new area
@@ -139,8 +173,8 @@ shape_convert <- function(old_shape, new_shape, weight, type = "sum") {
     ) %>%
     ungroup() %>%
     select(
-      area_code_old,
       area_code_new,
+      area_code_old,
       old_area,
       intersect_area,
       prop_old_in_new,
@@ -154,14 +188,16 @@ shape_convert <- function(old_shape, new_shape, weight, type = "sum") {
     ungroup() %>%
     distinct()
   
-  converted_measure_simple <- converted_measure %>% 
-    select(area_code_new, measure_new, count_overlap) %>% 
-    distinct()
+  if (!extra_cols) {
+    converted_measure <- converted_measure %>%
+      select(area_code_new, measure_new, count_overlap) %>%
+      distinct()
+  }
   
   # Join back to shapefile geometry
   new_shape_measure <- left_join(
     new_shape,
-    converted_measure_simple,
+    converted_measure,
     by = c("area_code" = "area_code_new")
   ) %>%
     rename(measure = measure_new)
